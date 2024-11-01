@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertir CSV a JS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 20px;
+            width: 300px;
+            height: 200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #drop-area.hover {
+            border-color: #333;
+        }
+        #fileInput {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Arrastra tu archivo CSV o selecciona uno</h1>
+
+<!-- Input para seleccionar archivos -->
+<input type="file" id="fileInput" accept=".csv">
+
+<!-- Área para arrastrar archivos -->
+<div id="drop-area">Suelta el archivo CSV aquí</div>
+
+<script>
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('fileInput');
+
+    // Prevenir el comportamiento por defecto para el drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Resaltar el área de drop cuando el archivo está siendo arrastrado
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('hover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('hover'), false);
+    });
+
+    // Manejar el evento de drop
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+            handleFile(files[0]);
+        }
+    }
+
+    // Manejar la selección del archivo desde el input
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files.length) {
+            handleFile(files[0]);
+        }
+    });
+
+    // Procesar el archivo seleccionado o arrastrado
+    function handleFile(file) {
+        if (file.type === "text/csv") {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                const jsData = convertCsvToJs(csvData);
+                downloadJsFile(jsData);
+            };
+            reader.readAsText(file);
+        } else {
+            alert('Por favor, selecciona o arrastra un archivo CSV.');
+        }
+    }
+
+    // Función para convertir el CSV a JS
+    function convertCsvToJs(csv) {
+        const lines = csv.trim().split('\n');
+        const modifiedLines = lines.map(line => {
+            // Usamos una expresión regular para buscar números de 12 dígitos que empiezan con "19"
+            return line.replace(/\b(19\d{10})\b/g, '0$1');
+        });
+        
+        // Convertir el contenido CSV a una cadena manteniendo los saltos de línea
+        const formattedData = modifiedLines.join('\n').replace(/\n/g, '\n ');
+        return `const data = \`${formattedData}\`;`;
+    }
+
+    // Función para descargar el archivo JS
+    function downloadJsFile(jsContent) {
+        const fileName = prompt('¿Cómo deseas nombrar tu archivo? (sin extensión)', 'miArchivo');
+        if (fileName) {
+            const blob = new Blob([jsContent], { type: 'application/javascript' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName.endsWith('.js') ? fileName : `${fileName}.js`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+</script>
+
+</body>
+</html>
