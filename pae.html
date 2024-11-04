@@ -33,8 +33,8 @@
         }
 
         #searchButton,
-        #deleteStockZeroButton,
-        #searchAgainButton {
+        #deleteStockZeroButton {
+
             padding: 10px;
             cursor: pointer;
             background-color: #4CAF50;
@@ -96,18 +96,64 @@
         .modal img {
             height: 200px;
         }
+
+        /*.toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }*/
+
+        .toggle {
+            display: none;
+        }
+
+        .toggle-label {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle:checked+.toggle-label {
+            background-color: #4caf50;
+        }
+
+        .toggle:checked+.toggle-label::before {
+            transform: translateX(30px);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="pae.js"></script>
+
+       
 </head>
 
 <body>
 
     <div id="searchContainer">
-        <input type="text" id="search"  oninput="ponerMayusculas()">
+        <input type="text" id="search" oninput="ponerMayusculas()">
         <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
-        <button id="deleteStockZeroButton" onclick="eliminarStock0()" style="display: none;">Eliminar Stock 0</button>
-        <button id="searchAgainButton" onclick="buscarDeNuevo()" style="display: none;">Volver al principio</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <!--</div>-->
     </div>
 
     <table id="productTable">
@@ -136,61 +182,7 @@
     <script>
         let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
 
-        function populateTable() {
-            const fila = data.trim().split('\n');
-            const CuerpoTabla = document.getElementById('productTable').querySelector('tbody');
-
-            fila.forEach(row => {
-                const columnas = row.split(';');
-                const filas = document.createElement('tr');
-
-                const nombreProducto = columnas[5];
-                const sms = columnas[6];
-                const ean = columnas[7];
-                const sup = columnas[10];
-                const precioAprox = columnas[11];
-                const stockAprox = columnas[12];
-
-                const supColumna = document.createElement('td');
-                const linkProducto = document.createElement('a');
-                linkProducto.href = `https://www.carrefour.es/?q=${ean.trim()}`;
-                linkProducto.target = '_blank';
-                linkProducto.textContent = sup.trim();
-                supColumna.appendChild(linkProducto);
-                filas.appendChild(supColumna);
-
-                const nombreProductoColumna = document.createElement('td');
-                nombreProductoColumna.textContent = nombreProducto.trim();
-                filas.appendChild(nombreProductoColumna);
-
-                const precioAproxColumna = document.createElement('td');
-                precioAproxColumna.textContent = precioAprox.trim();
-                filas.appendChild(precioAproxColumna);
-
-                const smsColumna = document.createElement('td');
-                smsColumna.textContent = sms.trim();
-                filas.appendChild(smsColumna);
-
-                const eanColumna = document.createElement('td');
-                const imagenCodigoBarras = document.createElement('img');
-                imagenCodigoBarras.className = 'barcode';
-                JsBarcode(imagenCodigoBarras, ean.trim(), {
-                    width: 4,
-                    height: 80
-                });
-
-                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(ean.trim());
-                eanColumna.appendChild(imagenCodigoBarras);
-                filas.appendChild(eanColumna);
-
-                const stockAproxColumna = document.createElement('td');
-                stockAproxColumna.textContent = stockAprox.trim();
-                filas.appendChild(stockAproxColumna);
-
-                CuerpoTabla.appendChild(filas);
-            });
-        }
-
+        
         function ponerMayusculas() {
             const textoEscrito = document.getElementById('search');
             textoEscrito.value = textoEscrito.value.toUpperCase();
@@ -228,9 +220,9 @@
             // Ordenar los resultados
             ordenarResultados();
             renderizarResultados();
-
+            document.getElementById('toggle').checked = false;
             // Cambiar visibilidad de botones
-            document.getElementById('searchButton').style.display = 'none';
+            // document.getElementById('searchButton').style.display = 'none';
             document.getElementById('deleteStockZeroButton').style.display = 'inline-block';
         }
 
@@ -299,14 +291,11 @@
         function eliminarStock0() {
             resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
             renderizarResultados();
-            // Cambiar visibilidad de botones
-            document.getElementById('deleteStockZeroButton').style.display = 'none';
-            document.getElementById('searchAgainButton').style.display = 'inline-block';
+
+
         }
 
-        function buscarDeNuevo() {
-            location.reload(); // Actualiza la página
-        }
+
 
         function mostrarCodigoBarras(reference) {
             const modal = document.getElementById('barcodeModal');
@@ -323,7 +312,22 @@
             modal.style.display = 'none';
         }
 
-        window.onload = populateTable;
+
+
+        const toggle = document.getElementById('toggle');
+
+
+
+        // Evento para cambiar entre modos
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+                
+            }
+        });
+        window.onload = filtrarTabla;
 
     </script>
 </body>
