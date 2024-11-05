@@ -1,130 +1,193 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertir CSV a JS</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Convertir CSV a JS</title>
+  
+  <!-- Importar fuentes de Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+ 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        #drop-area {
-            border: 2px dashed #ccc;
-            border-radius: 20px;
-            width: 300px;
-            height: 200px;
-            margin: 0 auto;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        #drop-area.hover {
-            border-color: #333;
-        }
-        #fileInput {
-            margin-bottom: 20px;
-        }
-    </style>
+    /* Reseteo básico y estilo general de la página */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Estilo para el body para centrar el contenido */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Añadir un efecto de partículas de fondo */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+    }
+
+    /* Ocultar el input de archivo, ya que solo queremos mostrar el botón */
+    #file-input {
+      display: none;
+    }
+
+    /* Estilo para el botón de "Convertir" */
+    .convert-button {
+      display: inline-block;
+      padding: 20px 60px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(145deg, #6a11cb, #2575fc);
+      border: none;
+      border-radius: 50px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25),
+                  0 6px 6px rgba(0, 0, 0, 0.22);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* Efecto 3D y animaciones en hover */
+    .convert-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 25px rgba(0, 0, 0, 0.35),
+                  0 10px 10px rgba(0, 0, 0, 0.22);
+      background: linear-gradient(145deg, #2575fc, #6a11cb);
+    }
+
+    .convert-button:active {
+      transform: translateY(2px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2),
+                  0 3px 5px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Animación de pulsación */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
+    }
+
+    .convert-button:active::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 1s ease-out;
+    }
+
+    /* Media Queries para Responsividad */
+    @media (max-width: 600px) {
+      .convert-button {
+        padding: 15px 40px;
+        font-size: 20px;
+      }
+    }
+  </style>
+  
 </head>
 <body>
 
-<h1>Arrastra tu archivo CSV o selecciona uno</h1>
+  <!-- Botón para seleccionar archivo CSV -->
+  <label for="file-input" class="convert-button">Convertir</label>
+  <input type="file" id="file-input" accept=".csv">
 
-<!-- Input para seleccionar archivos -->
-<input type="file" id="fileInput" accept=".csv">
+  <script>
+    const fileInput = document.getElementById('file-input');
+    let jsContent = '';
 
-<!-- Área para arrastrar archivos -->
-<div id="drop-area">Suelta el archivo CSV aquí</div>
-
-<script>
-    const dropArea = document.getElementById('drop-area');
-    const fileInput = document.getElementById('fileInput');
-
-    // Prevenir el comportamiento por defecto para el drag and drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    // Resaltar el área de drop cuando el archivo está siendo arrastrado
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, () => dropArea.classList.add('hover'), false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, () => dropArea.classList.remove('hover'), false);
-    });
-
-    // Manejar el evento de drop
-    dropArea.addEventListener('drop', handleDrop, false);
-
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length) {
-            handleFile(files[0]);
-        }
-    }
-
-    // Manejar la selección del archivo desde el input
-    fileInput.addEventListener('change', (e) => {
-        const files = e.target.files;
-        if (files.length) {
-            handleFile(files[0]);
-        }
-    });
-
-    // Procesar el archivo seleccionado o arrastrado
-    function handleFile(file) {
-        if (file.type === "text/csv") {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const csvData = event.target.result;
-                const jsData = convertCsvToJs(csvData);
-                downloadJsFile(jsData);
-            };
-            reader.readAsText(file);
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file && file.type === 'text/csv') {
+        const userFileName = prompt("Introduce el nombre del archivo JS sin extensión:", "archivo_convertido");
+        
+        // Verifica que el usuario haya introducido un nombre
+        if (userFileName) {
+          processFile(file, userFileName + '.js');
         } else {
-            alert('Por favor, selecciona o arrastra un archivo CSV.');
+          alert("Por favor introduce un nombre válido para el archivo.");
         }
+      } else {
+        alert('Por favor selecciona un archivo CSV válido.');
+      }
+    });
+
+    function processFile(file, fileName) {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const arrayBuffer = e.target.result;
+        
+        // Decodificar el archivo en ISO-8859-1
+        const textDecoder = new TextDecoder("ISO-8859-1");
+        const decodedText = textDecoder.decode(arrayBuffer);
+        
+        // Convertir y modificar el contenido del CSV antes de crear el archivo JS
+        const modifiedContent = convertCsvToJs(decodedText);
+        
+        // Crear contenido de JS con los datos modificados
+        jsContent = `const data = \`${modifiedContent.replace(/`/g, '\\`')}\`;`;
+
+        // Llamar a la función para descargar el archivo JS con el nombre dado
+        downloadFile(jsContent, fileName);
+      };
+      
+      reader.readAsArrayBuffer(file); // Leer el archivo como ArrayBuffer para decodificación de bytes
     }
 
-    // Función para convertir el CSV a JS
+    // Función para convertir el CSV a JS y añadir un 0 a números de 12 dígitos que empiezan con "19"
     function convertCsvToJs(csv) {
         const lines = csv.trim().split('\n');
         const modifiedLines = lines.map(line => {
             // Usamos una expresión regular para buscar números de 12 dígitos que empiezan con "19"
             return line.replace(/\b(19\d{10})\b/g, '0$1');
         });
-        
-        // Convertir el contenido CSV a una cadena manteniendo los saltos de línea
-        const formattedData = modifiedLines.join('\n').replace(/\n/g, '\n ');
-        return `const data = \`${formattedData}\`;`;
+        return modifiedLines.join('\n'); // Unimos las líneas modificadas
     }
 
-    // Función para descargar el archivo JS
-    function downloadJsFile(jsContent) {
-        const fileName = prompt('¿Cómo deseas nombrar tu archivo? (sin extensión)', 'miArchivo');
-        if (fileName) {
-            const blob = new Blob([jsContent], { type: 'application/javascript' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName.endsWith('.js') ? fileName : `${fileName}.js`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+    function downloadFile(content, fileName) {
+      const blob = new Blob([content], { type: 'application/javascript;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
-</script>
+  </script>
 
 </body>
 </html>
