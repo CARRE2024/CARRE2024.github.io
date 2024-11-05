@@ -8,7 +8,7 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            padding-top: 100px; /* Asegúrate de que el contenido no se superponga al header */
+            padding-top: 60px; /* Espacio para el contenedor de búsqueda */
         }
 
         a {
@@ -19,14 +19,15 @@
         #searchContainer {
             display: flex;
             flex-direction: column;
-            width: 100%;
-            position: fixed; /* Fija el contenedor en la parte superior */
+            width: 100vw; /* Ocupa todo el ancho de la ventana */
+            position: fixed; /* Fijo en la parte superior */
             top: 0; /* Alineado a la parte superior */
             left: 0; /* Alineado al lado izquierdo */
             background-color: white; /* Fondo blanco para que sea visible */
             padding: 10px; /* Espaciado interno */
             z-index: 1000; /* Asegura que esté por encima de otros elementos */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra para distinguir del fondo */
+            box-sizing: border-box; /* Incluye el padding en el ancho total */
         }
 
         #search {
@@ -135,6 +136,22 @@
         .toggle:checked + .toggle-label::before {
             transform: translateX(30px);
         }
+
+        /* Estilos para pantallas pequeñas */
+        @media (max-width: 600px) {
+            body {
+                padding-top: 60px; /* Espacio suficiente para no cubrir el contenedor de búsqueda */
+            }
+
+            #search {
+                font-size: 20px; /* Ajustar el tamaño de la fuente del input en móviles */
+            }
+
+            #searchButton,
+            #deleteStockZeroButton {
+                font-size: 20px; /* Ajustar el tamaño de los botones en móviles */
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="pae.js"></script>
@@ -144,11 +161,11 @@
 
     <div id="searchContainer">
         <input type="text" id="search" oninput="ponerMayusculas()">
-        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <button id="searchButton" onclick="filtrarTabla()">Buscar (separa por comas)</button>
         <input type="checkbox" id="toggle" class="toggle">
         <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
     </div>
-</br></br></br></br>
+
     <table id="productTable">
         <thead>
             <tr>
@@ -275,15 +292,10 @@
             });
         }
 
-        function eliminarStock0() {
-            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
-            renderizarResultados();
-        }
-
-        function mostrarCodigoBarras(reference) {
+        function mostrarCodigoBarras(ean) {
             const modal = document.getElementById('barcodeModal');
-            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
-            JsBarcode(modalBarcodeImage, reference, {
+            const modalImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalImage, ean, {
                 width: 4,
                 height: 200
             });
@@ -294,19 +306,8 @@
             const modal = document.getElementById('barcodeModal');
             modal.style.display = 'none';
         }
-
-        const toggle = document.getElementById('toggle');
-
-        toggle.addEventListener('change', () => {
-            if (toggle.checked) {
-                eliminarStock0();
-            } else {
-                filtrarTabla();
-            }
-        });
-        
-        window.onload = filtrarTabla;
     </script>
+
 </body>
 
 </html>
