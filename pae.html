@@ -8,26 +8,18 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            padding-top: 60px; /* Espacio para el contenedor de búsqueda */
         }
 
         a {
             color: inherit;
+            /* O color: black; */
             text-decoration: none;
         }
 
         #searchContainer {
             display: flex;
             flex-direction: column;
-            width: 100vw; /* Ocupa todo el ancho de la ventana */
-            position: fixed; /* Fijo en la parte superior */
-            top: 0; /* Alineado a la parte superior */
-            left: 0; /* Alineado al lado izquierdo */
-            background-color: white; /* Fondo blanco para que sea visible */
-            padding: 10px; /* Espaciado interno */
-            z-index: 1000; /* Asegura que esté por encima de otros elementos */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra para distinguir del fondo */
-            box-sizing: border-box; /* Incluye el padding en el ancho total */
+            width: 100%;
         }
 
         #search {
@@ -37,10 +29,12 @@
             width: 100%;
             box-sizing: border-box;
             font-size: 32px;
+            /* Tamaño de fuente aumentado */
         }
 
         #searchButton,
         #deleteStockZeroButton {
+
             padding: 10px;
             cursor: pointer;
             background-color: #4CAF50;
@@ -55,7 +49,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px; /* Mantén un margen superior para el contenido */
+            margin-top: 20px;
         }
 
         th,
@@ -103,6 +97,13 @@
             height: 200px;
         }
 
+        /*.toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }*/
+
         .toggle {
             display: none;
         }
@@ -129,41 +130,30 @@
             transition: transform 0.3s;
         }
 
-        .toggle:checked + .toggle-label {
+        .toggle:checked+.toggle-label {
             background-color: #4caf50;
         }
 
-        .toggle:checked + .toggle-label::before {
+        .toggle:checked+.toggle-label::before {
             transform: translateX(30px);
-        }
-
-        /* Estilos para pantallas pequeñas */
-        @media (max-width: 600px) {
-            body {
-                padding-top: 60px; /* Espacio suficiente para no cubrir el contenedor de búsqueda */
-            }
-
-            #search {
-                font-size: 20px; /* Ajustar el tamaño de la fuente del input en móviles */
-            }
-
-            #searchButton,
-            #deleteStockZeroButton {
-                font-size: 20px; /* Ajustar el tamaño de los botones en móviles */
-            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="pae.js"></script>
+
+       
 </head>
 
 <body>
 
     <div id="searchContainer">
         <input type="text" id="search" oninput="ponerMayusculas()">
-        <button id="searchButton" onclick="filtrarTabla()">Buscar (separa por comas)</button>
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
         <input type="checkbox" id="toggle" class="toggle">
         <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <!--</div>-->
     </div>
 
     <table id="productTable">
@@ -190,8 +180,9 @@
     </div>
 
     <script>
-        let resultadosFiltrados = [];
+        let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
 
+        
         function ponerMayusculas() {
             const textoEscrito = document.getElementById('search');
             textoEscrito.value = textoEscrito.value.toUpperCase();
@@ -226,20 +217,25 @@
                 }
             });
 
+            // Ordenar los resultados
             ordenarResultados();
             renderizarResultados();
             document.getElementById('toggle').checked = false;
+            // Cambiar visibilidad de botones
+            // document.getElementById('searchButton').style.display = 'none';
             document.getElementById('deleteStockZeroButton').style.display = 'inline-block';
         }
 
         function ordenarResultados() {
             resultadosFiltrados.sort((a, b) => {
                 const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
-                const porcentajeB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
+                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
 
-                if (porcentajeA !== porcentajeB) {
-                    return porcentajeB - porcentajeA;
+                // Primero, ordenar por porcentaje (descendente)
+                if (porcentajeA !== porcentageB) {
+                    return porcentageB - porcentajeA;
                 } else {
+                    // Luego, ordenar por precio (descendente)
                     return (b.valorPrecio || 0) - (a.valorPrecio || 0);
                 }
             });
@@ -292,10 +288,19 @@
             });
         }
 
-        function mostrarCodigoBarras(ean) {
+        function eliminarStock0() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            renderizarResultados();
+
+
+        }
+
+
+
+        function mostrarCodigoBarras(reference) {
             const modal = document.getElementById('barcodeModal');
-            const modalImage = document.getElementById('modalBarcodeImage');
-            JsBarcode(modalImage, ean, {
+            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalBarcodeImage, reference, {
                 width: 4,
                 height: 200
             });
@@ -306,8 +311,25 @@
             const modal = document.getElementById('barcodeModal');
             modal.style.display = 'none';
         }
-    </script>
 
+
+
+        const toggle = document.getElementById('toggle');
+
+
+
+        // Evento para cambiar entre modos
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+                
+            }
+        });
+        window.onload = filtrarTabla;
+
+    </script>
 </body>
 
 </html>
