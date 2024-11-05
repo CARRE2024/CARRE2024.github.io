@@ -1,95 +1,338 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <!-- Prevenir el escalado de la vista -->
-    <title>Barra de Navegación Fija</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            margin: 20px;
         }
-        .navbar {
-            background-color: #333;
-            overflow: hidden;
-            position: fixed; /* Fija la barra de navegación */
-            top: 0; /* Posición desde la parte superior */
-            width: 100%; /* Ancho completo */
-            z-index: 1000; /* Asegura que esté por encima de otros elementos */
-            touch-action: pan-y; /* Permite desplazamiento vertical pero no afecta el tamaño al hacer zoom */
-        }
-        .navbar a {
-            float: left;
-            display: block;
-            color: white;
-            text-align: center;
-            padding: 14px 16px;
+
+        a {
+            color: inherit;
+            /* O color: black; */
             text-decoration: none;
         }
-        .navbar a:hover {
-            background-color: #ddd;
-            color: black;
+
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            position: fixed;
+            background: #fdfdfd;
         }
-        /* Añadir un margen superior al contenido para que no se superponga a la barra de navegación */
-        .content {
-            margin-top: 60px; /* Altura de la barra de navegación */
-            padding: 16px; /* Espaciado alrededor del contenido */
+
+        #search {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 32px;
+            
+            /* Tamaño de fuente aumentado */
         }
-        .navbar .logo {
-            font-weight: bold;
-            font-size: 20px;
+
+        #searchButton,
+        #deleteStockZeroButton {
+
+            padding: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
         }
-        /* Estilos responsivos */
-        @media (max-width: 600px) {
-            .navbar a {
-                padding: 10px 12px; /* Ajustar el tamaño de los enlaces en pantallas más pequeñas */
-            }
-            .navbar .logo {
-                font-size: 18px; /* Ajustar el tamaño de la logo en pantallas más pequeñas */
-            }
+
+        table {
+            /*width: 100%;*/
+            border-collapse: collapse;
+           /* margin-top: 20px;*/
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .barcode {
+            height: 80px;
+            cursor: pointer;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .modal img {
+            height: 200px;
+        }
+
+        /*.toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }*/
+
+        .toggle {
+            display: none;
+        }
+
+        .toggle-label {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle:checked+.toggle-label {
+            background-color: #4caf50;
+        }
+
+        .toggle:checked+.toggle-label::before {
+            transform: translateX(30px);
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="pae.js"></script>
+
+       
 </head>
+
 <body>
 
-<div class="navbar">
-    <a href="#" class="logo">MiSitio</a>
-    <a href="#home">Inicio</a>
-    <a href="#about">Acerca de</a>
-    <a href="#services">Servicios</a>
-    <a href="#contact">Contacto</a>
-</div>
+    <div id="searchContainer">
+        <input type="text" id="search" oninput="ponerMayusculas()">
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <!--</div>-->
+    </div>
+</br></br></br></br></br></br></br></br></br></br></br></br>
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>Sup</th>
+                <th>Nombre del producto</th>
+                <th>Precio aprox</th>
+                <th>SMS</th>
+                <th>EAN</th>
+                <th>Stock aprox</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se insertarán los datos -->
+        </tbody>
+    </table>
 
-<div class="content">
-    <h1>Bienvenido a Mi Sitio</h1>
-    <p>Este es un ejemplo de una barra de navegación fija.</p>
-    <p>Desplázate hacia abajo para ver cómo la barra de navegación permanece en su lugar.</p>
-    <p>...</p>
-    <p>Continúa agregando contenido aquí para hacer scroll y probar la barra de navegación.</p>
-    <p>...</p>
-    <p>Este es solo un ejemplo. Puedes seguir añadiendo más texto para probar la navegación.</p>
-    <p>...</p>
-    <p>Finalmente, ¡espero que esto sea útil para ti!</p>
-    <h1>Bienvenido a Mi Sitio</h1>
-    <p>Este es un ejemplo de una barra de navegación fija.</p>
-    <p>Desplázate hacia abajo para ver cómo la barra de navegación permanece en su lugar.</p>
-    <p>...</p>
-    <p>Continúa agregando contenido aquí para hacer scroll y probar la barra de navegación.</p>
-    <p>...</p>
-    <p>Este es solo un ejemplo. Puedes seguir añadiendo más texto para probar la navegación.</p>
-    <p>...</p>
-    <p>Finalmente, ¡espero que esto sea útil para ti!</p><h1>Bienvenido a Mi Sitio</h1>
-    <p>Este es un ejemplo de una barra de navegación fija.</p>
-    <p>Desplázate hacia abajo para ver cómo la barra de navegación permanece en su lugar.</p>
-    <p>...</p>
-    <p>Continúa agregando contenido aquí para hacer scroll y probar la barra de navegación.</p>
-    <p>...</p>
-    <p>Este es solo un ejemplo. Puedes seguir añadiendo más texto para probar la navegación.</p>
-    <p>...</p>
-    <p>Finalmente, ¡espero que esto sea útil para ti!</p>
+    <!-- Modal para mostrar el código de barras -->
+    <div id="barcodeModal" class="modal" onclick="cerrarModal()">
+        <div class="modal-content">
+            <img id="modalBarcodeImage" alt="Código de barras">
+        </div>
+    </div>
 
-</div>
+    <script>
+        let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
 
+        
+        function ponerMayusculas() {
+            const textoEscrito = document.getElementById('search');
+            textoEscrito.value = textoEscrito.value.toUpperCase();
+        }
+
+        function filtrarTabla() {
+            const entrada = document.getElementById('search').value.toLowerCase();
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            const filas = data.trim().split('\n');
+            const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
+
+            resultadosFiltrados = [];
+
+            filas.forEach(row => {
+                const columnas = row.split(';');
+                const nombreProducto = columnas[5].toLowerCase();
+
+                const contieneTodosTerminos = terminosBuscados.every(term => nombreProducto.includes(term));
+
+                if (contieneTodosTerminos) {
+                    resultadosFiltrados.push({
+                        nombreProducto: columnas[5].trim(),
+                        sms: columnas[6].trim(),
+                        ean: columnas[7].trim(),
+                        sup: columnas[10].trim(),
+                        precioAprox: columnas[11].trim(),
+                        stockAprox: columnas[12].trim(),
+                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
+                    });
+                }
+            });
+
+            // Ordenar los resultados
+            ordenarResultados();
+            renderizarResultados();
+            document.getElementById('toggle').checked = false;
+            // Cambiar visibilidad de botones
+            // document.getElementById('searchButton').style.display = 'none';
+            document.getElementById('deleteStockZeroButton').style.display = 'inline-block';
+        }
+
+        function ordenarResultados() {
+            resultadosFiltrados.sort((a, b) => {
+                const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
+                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
+
+                // Primero, ordenar por porcentaje (descendente)
+                if (porcentajeA !== porcentageB) {
+                    return porcentageB - porcentajeA;
+                } else {
+                    // Luego, ordenar por precio (descendente)
+                    return (b.valorPrecio || 0) - (a.valorPrecio || 0);
+                }
+            });
+        }
+
+        function renderizarResultados() {
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            resultadosFiltrados.forEach(result => {
+                const fila = document.createElement('tr');
+
+                const celdaSup = document.createElement('td');
+                const linkProducto = document.createElement('a');
+                linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
+                linkProducto.target = '_blank';
+                linkProducto.textContent = result.sup;
+                celdaSup.appendChild(linkProducto);
+                fila.appendChild(celdaSup);
+
+                const celdaNombreArticulo = document.createElement('td');
+                celdaNombreArticulo.textContent = result.nombreProducto;
+                fila.appendChild(celdaNombreArticulo);
+
+                const celdaPrecioAprox = document.createElement('td');
+                celdaPrecioAprox.textContent = result.precioAprox;
+                fila.appendChild(celdaPrecioAprox);
+
+                const celdaSms = document.createElement('td');
+                celdaSms.textContent = result.sms;
+                fila.appendChild(celdaSms);
+
+                const celdaEan = document.createElement('td');
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
+                fila.appendChild(celdaEan);
+
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox;
+                fila.appendChild(celdaStockAprox);
+
+                cuerpoTabla.appendChild(fila);
+            });
+        }
+
+        function eliminarStock0() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            renderizarResultados();
+
+
+        }
+
+
+
+        function mostrarCodigoBarras(reference) {
+            const modal = document.getElementById('barcodeModal');
+            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalBarcodeImage, reference, {
+                width: 4,
+                height: 200
+            });
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById('barcodeModal');
+            modal.style.display = 'none';
+        }
+
+
+
+        const toggle = document.getElementById('toggle');
+
+
+
+        // Evento para cambiar entre modos
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+                
+            }
+        });
+        window.onload = filtrarTabla;
+
+    </script>
 </body>
+
 </html>
