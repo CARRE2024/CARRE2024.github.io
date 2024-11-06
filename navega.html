@@ -152,7 +152,27 @@
                 width: 800px; /* Asegura que tanto el input como el botón ocupen el 100% de ancho */
                 margin-bottom: 50px; /* Un pequeño margen inferior entre el input y el botón */
             }
+            .toggle-label {
+            width: 80px;
+            height: 45px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
 
+        .toggle-label::before {
+            content: '';
+            width: 39px;
+            height: 38px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
             #divDeTabla {
                 width: 100%; /* Asegura que el div de la tabla también ocupe el 100% del contenedor */
             }
@@ -169,7 +189,7 @@
         <input type="text" id="search" oninput="ponerMayusculas()">
         <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
         <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
-        <!--<div class="toggle-container">-->
+        <!--<div class="toggle-container">--></br></br>
         <input type="checkbox" id="toggle" class="toggle">
         <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
         <!--</div>-->
