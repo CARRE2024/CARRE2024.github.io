@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1.0">
     <title>Listado de Frutas</title>
     <style>
         body {
@@ -89,7 +89,8 @@
             }
             /* Permitir zoom en la tabla */
             .container {
-                touch-action: manipulation; /* Permitir solo manipulación de gestos en la tabla */
+                overflow: visible;
+                max-width: 100%; /* para que se expanda con el zoom */
             }
         }
     </style>
@@ -112,7 +113,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td>barra fija ampliable</td><td>España es grande</td><td>Rojo</td></tr>
+                <tr><td>barra fija y ampliacion intento dos</td><td>España</td><td>Rojo</td></tr>
                 <tr><td>Banana</td><td>Ecuador</td><td>Amarillo</td></tr>
                 <tr><td>Naranja</td><td>Brasil</td><td>Naranja</td></tr>
                 <tr><td>Sandía</td><td>México</td><td>Verde</td></tr>
