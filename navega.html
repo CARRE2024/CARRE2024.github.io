@@ -1,150 +1,340 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listado de Frutas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            padding-top: 100px; /* Espacio para que el contenido no quede debajo del header */
-            margin: 0;
-            display: flex;
-            justify-content: center;
+            margin: 20px;
         }
-        .fixed-header {
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-bottom: 20px; /* Añadí un margen al final para separar del contenido */
+        }
+
+        #divDeTabla {
+            color: black;
+        }
+
+        #search {
+            padding: 10px;
+            border: 1px solid #ddd;
+        
+            margin-bottom: 10px;
+            font-size: 32px;
+            /* Aumenta el tamaño de la fuente */
+            width: 600px; /* Se asegura de ocupar todo el ancho disponible */
+        
+        }
+
+        #searchButton {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 100%; /* El botón también ocupa todo el ancho */
+            box-sizing: border-box;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .barcode {
+            height: 80px;
+            cursor: pointer;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background-color: #4CAF50;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
             z-index: 1000;
-            color: white;
-            /* Evitar que el div de búsqueda responda al zoom en dispositivos móviles */
-            transform-origin: top left;
-            will-change: transform;
         }
-        /* Mantener el div de búsqueda fijo en tamaño en móviles */
-        @media (max-width: 600px) {
-            .fixed-header {
-                position: absolute;
-                transform: scale(calc(1 / var(--zoom-factor, 1)));
-            }
-        }
-        .fixed-header .search-bar {
+
+        .modal-content {
             display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .search-bar input[type="text"] {
-            flex: 1;
-            padding: 8px;
-            border-radius: 4px;
-            border: none;
-            max-width: 500px;
-        }
-        .search-bar button {
-            padding: 8px 16px;
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .container {
-            width: 90%;
-            max-width: 800px;
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            overflow-x: auto; /* Hacer que la tabla sea desplazable en pantallas pequeñas */
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
+            justify-content: center;
+            align-items: center;
             text-align: center;
         }
-        th {
-            background-color: #4CAF50;
-            color: white;
+
+        .modal img {
+            height: 200px;
         }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
+
+        /* Estilo del toggle */
+        .toggle {
+            display: none;
+        }
+
+        .toggle-label {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle:checked + .toggle-label {
+            background-color: #4caf50;
+        }
+
+        .toggle:checked + .toggle-label::before {
+            transform: translateX(30px);
+        }
+
+        /* Media Query para pantallas de tamaño móvil */
+        @media (max-width: 600px) {
+            #searchContainer {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                margin-bottom: 0; /* Se ajusta el margen para mejor diseño en móviles */
+            }
+/*esto de AQUI AQUI AQUI*/
+            #search,
+            #searchButton {
+                width: 800px; /* Asegura que tanto el input como el botón ocupen el 100% de ancho */
+                margin-bottom: 10px; /* Un pequeño margen inferior entre el input y el botón */
+            }
+
+            #divDeTabla {
+                width: 100%; /* Asegura que el div de la tabla también ocupe el 100% del contenedor */
+            }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="ofimatica.js"></script>
+
 </head>
+
 <body>
-    <div class="fixed-header">
-        <div class="search-bar">
-            <input type="text" placeholder="Buscar fruta..." id="searchField">
-            <button onclick="buscar()">Buscar</button>
-        </div>
+
+    <div id="searchContainer">
+        <input type="text" id="search" oninput="ponerMayusculas()">
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <!--</div>-->
     </div>
-    
-    <div class="container">
-        <table>
+    <div id="divDeTabla">
+        <table id="productTable">
             <thead>
                 <tr>
-                    <th>Fruta</th>
-                    <th>Origen</th>
-                    <th>Color</th>
+                    <th>Sup</th>
+                    <th>Nombre del producto</th>
+                    <th>Precio aprox</th>
+                    <th>SMS</th>
+                    <th>EAN</th>
+                    <th>Stock aprox</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td>Manzana</td><td>España</td><td>Rojo</td></tr>
-                <tr><td>Banana</td><td>Ecuador</td><td>Amarillo</td></tr>
-                <tr><td>Naranja</td><td>Brasil</td><td>Naranja</td></tr>
-                <tr><td>Sandía</td><td>México</td><td>Verde</td></tr>
-                <tr><td>Fresa</td><td>Chile</td><td>Rojo</td></tr>
-                <tr><td>Piña</td><td>Costa Rica</td><td>Amarillo</td></tr>
-                <tr><td>Kiwi</td><td>Nueva Zelanda</td><td>Verde</td></tr>
-                <tr><td>Uva</td><td>Italia</td><td>Morado</td></tr>
-                <tr><td>Papaya</td><td>Colombia</td><td>Naranja</td></tr>
-                <tr><td>Cereza</td><td>Francia</td><td>Rojo</td></tr>
-                <tr><td>Mango</td><td>India</td><td>Naranja</td></tr>
-                <tr><td>Limón</td><td>Argentina</td><td>Amarillo</td></tr>
-                <tr><td>Arándano</td><td>Canadá</td><td>Azul</td></tr>
-                <tr><td>Durazno</td><td>China</td><td>Rosado</td></tr>
-                <tr><td>Coco</td><td>Indonesia</td><td>Marrón</td></tr>
-                <tr><td>Granada</td><td>Irán</td><td>Rojo</td></tr>
-                <tr><td>Melón</td><td>Turquía</td><td>Amarillo</td></tr>
-                <tr><td>Mandarina</td><td>Egipto</td><td>Naranja</td></tr>
-                <tr><td>Pitahaya</td><td>Vietnam</td><td>Rosa</td></tr>
-                <tr><td>Tamarindo</td><td>México</td><td>Marrón</td></tr>
+                <!-- Aquí se insertarán los datos -->
             </tbody>
         </table>
     </div>
+    <!-- Modal para mostrar el código de barras -->
+    <div id="barcodeModal" class="modal" onclick="cerrarModal()">
+        <div class="modal-content">
+            <img id="modalBarcodeImage" alt="Código de barras">
+        </div>
+    </div>
 
     <script>
-        function buscar() {
-            let input = document.getElementById("searchField").value.toLowerCase();
-            let rows = document.querySelectorAll("tbody tr");
-            
-            rows.forEach(row => {
-                let fruta = row.children[0].textContent.toLowerCase();
-                if (fruta.includes(input)) {
-                    row.style.display = "";
+        let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
+
+        function ponerMayusculas() {
+            const textoEscrito = document.getElementById('search');
+            textoEscrito.value = textoEscrito.value.toUpperCase();
+        }
+
+        function filtrarTabla() {
+            const entrada = document.getElementById('search').value.toLowerCase();
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            const filas = data.trim().split('\n');
+            const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
+
+            resultadosFiltrados = [];
+
+            filas.forEach(row => {
+                const columnas = row.split(';');
+                const nombreProducto = columnas[5].toLowerCase();
+
+                const contieneTodosTerminos = terminosBuscados.every(term => nombreProducto.includes(term));
+
+                if (contieneTodosTerminos) {
+                    resultadosFiltrados.push({
+                        nombreProducto: columnas[5].trim(),
+                        sms: columnas[6].trim(),
+                        ean: columnas[7].trim(),
+                        sup: columnas[10].trim(),
+                        precioAprox: columnas[11].trim(),
+                        stockAprox: columnas[12].trim(),
+                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
+                    });
+                }
+            });
+
+            // Ordenar los resultados
+            ordenarResultados();
+            renderizarResultados();
+            document.getElementById('toggle').checked = false;
+            // Cambiar visibilidad de botones
+            document.getElementById('deleteStockZeroButton').style.display = 'inline-block';
+        }
+
+        function ordenarResultados() {
+            resultadosFiltrados.sort((a, b) => {
+                const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
+                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
+
+                // Primero, ordenar por porcentaje (descendente)
+                if (porcentajeA !== porcentageB) {
+                    return porcentageB - porcentajeA;
                 } else {
-                    row.style.display = "none";
+                    // Luego, ordenar por precio (descendente)
+                    return (b.valorPrecio || 0) - (a.valorPrecio || 0);
                 }
             });
         }
 
-        // Simular que el header no cambia de tamaño cuando se aplica zoom
-        window.addEventListener("resize", () => {
-            const zoomFactor = window.innerWidth / screen.width;
-            document.documentElement.style.setProperty('--zoom-factor', zoomFactor);
+        function renderizarResultados() {
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            resultadosFiltrados.forEach(result => {
+                const fila = document.createElement('tr');
+
+                const celdaSup = document.createElement('td');
+                const linkProducto = document.createElement('a');
+                linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
+                linkProducto.target = '_blank';
+                linkProducto.textContent = result.sup;
+                celdaSup.appendChild(linkProducto);
+                fila.appendChild(celdaSup);
+
+                const celdaNombreArticulo = document.createElement('td');
+                celdaNombreArticulo.textContent = result.nombreProducto;
+                fila.appendChild(celdaNombreArticulo);
+
+                const celdaPrecioAprox = document.createElement('td');
+                celdaPrecioAprox.textContent = result.precioAprox;
+                fila.appendChild(celdaPrecioAprox);
+
+                const celdaSms = document.createElement('td');
+                celdaSms.textContent = result.sms;
+                fila.appendChild(celdaSms);
+
+                const celdaEan = document.createElement('td');
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
+                fila.appendChild(celdaEan);
+
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox;
+                fila.appendChild(celdaStockAprox);
+
+                cuerpoTabla.appendChild(fila);
+            });
+        }
+
+        function eliminarStock0() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            renderizarResultados();
+        }
+
+        function mostrarCodigoBarras(reference) {
+            const modal = document.getElementById('barcodeModal');
+            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalBarcodeImage, reference, {
+                width: 4,
+                height: 200
+            });
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById('barcodeModal');
+            modal.style.display = 'none';
+        }
+
+        const toggle = document.getElementById('toggle');
+
+        // Evento para cambiar entre modos
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+            }
         });
+
+        window.onload = filtrarTabla;
+
     </script>
 </body>
+
 </html>
