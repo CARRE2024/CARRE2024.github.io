@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, initial-scale=1.0, maximum-scale=1.0">
     <title>Listado de Frutas</title>
     <style>
         body {
@@ -23,6 +23,9 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             color: white;
+            /* Evitar que el div de búsqueda responda al zoom en dispositivos móviles */
+            transform: scale(1);
+            transform-origin: top;
         }
         .fixed-header .search-bar {
             display: flex;
@@ -51,7 +54,8 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px; /* Para mantener espacio entre el contenido y el header */
+            margin-top: 20px;
+            overflow-x: auto; /* Hacer que la tabla sea desplazable en pantallas pequeñas */
         }
         table {
             width: 100%;
@@ -82,6 +86,10 @@
             .search-bar input[type="text"], .search-bar button {
                 width: 100%;
                 margin: 5px 0;
+            }
+            /* Permitir zoom en la tabla */
+            .container {
+                touch-action: manipulation; /* Permitir solo manipulación de gestos en la tabla */
             }
         }
     </style>
