@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listado de Frutas</title>
     <style>
         body {
@@ -24,8 +24,15 @@
             z-index: 1000;
             color: white;
             /* Evitar que el div de búsqueda responda al zoom en dispositivos móviles */
-            transform: scale(1);
-            transform-origin: top;
+            transform-origin: top left;
+            will-change: transform;
+        }
+        /* Mantener el div de búsqueda fijo en tamaño en móviles */
+        @media (max-width: 600px) {
+            .fixed-header {
+                position: absolute;
+                transform: scale(calc(1 / var(--zoom-factor, 1)));
+            }
         }
         .fixed-header .search-bar {
             display: flex;
@@ -74,25 +81,6 @@
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
-
-        /* Estilos específicos para pantallas móviles */
-        @media (max-width: 600px) {
-            .fixed-header {
-                padding: 10px;
-            }
-            .search-bar {
-                flex-direction: column;
-            }
-            .search-bar input[type="text"], .search-bar button {
-                width: 100%;
-                margin: 5px 0;
-            }
-            /* Permitir zoom en la tabla */
-            .container {
-                overflow: visible;
-                max-width: 100%; /* para que se expanda con el zoom */
-            }
-        }
     </style>
 </head>
 <body>
@@ -113,7 +101,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td>barra fija y ampliacion intento dos</td><td>España</td><td>Rojo</td></tr>
+                <tr><td>Manzana</td><td>España</td><td>Rojo</td></tr>
                 <tr><td>Banana</td><td>Ecuador</td><td>Amarillo</td></tr>
                 <tr><td>Naranja</td><td>Brasil</td><td>Naranja</td></tr>
                 <tr><td>Sandía</td><td>México</td><td>Verde</td></tr>
@@ -151,6 +139,12 @@
                 }
             });
         }
+
+        // Simular que el header no cambia de tamaño cuando se aplica zoom
+        window.addEventListener("resize", () => {
+            const zoomFactor = window.innerWidth / screen.width;
+            document.documentElement.style.setProperty('--zoom-factor', zoomFactor);
+        });
     </script>
 </body>
 </html>
