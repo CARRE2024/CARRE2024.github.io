@@ -1,0 +1,7 @@
+PRECIO
+
+=BUSCARV(H1;[preciosgae.xls]Sheet1!$J:N;5;FALSO)
+
+STOCK
+
+=BUSCARV(H1;[preciosgae.xls]Sheet1!$J:AV;39;FALSO)
