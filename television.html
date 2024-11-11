@@ -162,6 +162,7 @@
                 <th>Sup</th>
                 <th>Nombre del producto</th>
                 <th>Precio aprox</th>
+                <th>Oferta</th>
                 <th>SMS</th>
                 <th>EAN</th>
                 <th>Stock aprox</th>
@@ -211,6 +212,7 @@
                         ean: columnas[7].trim(),
                         sup: columnas[10].trim(),
                         precioAprox: columnas[11].trim(),
+                        oferta: columnas[13].trim(),
                         stockAprox: columnas[12].trim(),
                         valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
                     });
@@ -263,6 +265,10 @@
                 const celdaPrecioAprox = document.createElement('td');
                 celdaPrecioAprox.textContent = result.precioAprox;
                 fila.appendChild(celdaPrecioAprox);
+
+                const celdaoferta = document.createElement('td');
+                celdaoferta.textContent = result.oferta;
+                fila.appendChild(celdaoferta);
 
                 const celdaSms = document.createElement('td');
                 celdaSms.textContent = result.sms;
