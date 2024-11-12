@@ -141,7 +141,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="gae.js"></script>
 
-       
+
 </head>
 
 <body>
@@ -159,13 +159,14 @@
     <table id="productTable">
         <thead>
             <tr>
+                <th>Stock</th>
                 <th>Sup</th>
                 <th>Nombre del producto</th>
                 <th>Precio aprox</th>
                 <th>Oferta</th>
                 <th>SMS</th>
                 <th>EAN</th>
-                <th>Stock aprox</th>
+
             </tr>
         </thead>
         <tbody>
@@ -183,7 +184,7 @@
     <script>
         let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
 
-        
+
         function ponerMayusculas() {
             const textoEscrito = document.getElementById('search');
             textoEscrito.value = textoEscrito.value.toUpperCase();
@@ -250,6 +251,10 @@
             resultadosFiltrados.forEach(result => {
                 const fila = document.createElement('tr');
 
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox;
+                fila.appendChild(celdaStockAprox);
+
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
                 linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
@@ -286,9 +291,7 @@
                 celdaEan.appendChild(imagenCodigoBarras);
                 fila.appendChild(celdaEan);
 
-                const celdaStockAprox = document.createElement('td');
-                celdaStockAprox.textContent = result.stockAprox;
-                fila.appendChild(celdaStockAprox);
+
 
                 cuerpoTabla.appendChild(fila);
             });
@@ -330,7 +333,7 @@
                 eliminarStock0();
             } else {
                 filtrarTabla();
-                
+
             }
         });
         window.onload = filtrarTabla;
