@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Mis Carpetas</title>
+    <style>
+       /* Estilos para los botones redondos */
+.folder-container {
+    text-align: center;
+    /* Centra el contenido horizontalmente */
+}
+
+.folder-button {
+    display: block;
+    background-color: #007BFF;
+    color: white;
+    text-align: center;
+    padding: 20px; /* Aumenta el padding para aumentar la altura del botón */
+    border-radius: 20px;
+    text-decoration: none;
+    margin: 30px auto;
+    /* Centra verticalmente y ajusta la separación horizontal */
+    width: 80%; /* Reduzco el ancho para dejar más espacio en pantallas pequeñas */
+    /* Tamaño de fuente aumentado para dispositivos móviles */
+    font-size: 30px; /* Aumenta el tamaño de fuente general para dispositivos móviles */
+}
+
+/* Media query para aplicar estilos específicos para dispositivos móviles */
+@media screen and (max-width: 480px) {
+    .folder-button {
+        padding: 30px; /* Aumenta aún más el padding para dispositivos móviles */
+        font-size: 40px; /* Aumenta el tamaño de fuente para dispositivos móviles */
+    }
+}
+
+    </style>
+</head>
+
+<body>
+   
+    <div class="folder-container" id="folderList"></div>
+
+    <script>
+        const folderList = document.getElementById("folderList");
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const folderNames = JSON.parse(xhr.responseText);
+
+                folderNames.forEach((folderName) => {
+                    const folderLink = document.createElement("a");
+                    folderLink.textContent = folderName;
+                    folderLink.href = folderName + "/";
+                    folderLink.classList.add("folder-button");
+                    folderList.appendChild(folderLink);
+                });
+            }
+        };
+        
+
+        xhr.open("GET", "get_folders.php", true);
+        xhr.send();
+    </script>
+</body>
+
+</html>
