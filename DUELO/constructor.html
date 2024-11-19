@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Generador de Preguntas Super Premium</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            transition: background-color 0.5s, color 0.5s;
+            /*transition: background-color 0.3s, color 0.3s;*/
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #333;
+        }
+
+        label {
+            font-size: 18px;
+            display: block;
+            margin-top: 10px;
+
+        }
+
+        input[type="text"] {
+            font-size: 18px;
+            padding: 10px;
+            width: 80%;
+            margin: 10px auto;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #0074d9;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #btn5 {
+            background-color: #2ecc71;
+        }
+
+        #btn5:hover {
+            background-color: #27ae60;
+        }
+
+        /*estilos modo oscuro*/
+        body[data-theme="dark"] {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            /*background-color: #f0f0f0;*/
+            background: #1f1f1f;
+            /*modo dark*/
+        }
+
+        body[data-theme="dark"] h1 {
+            font-size: 36px;
+            color: #9cdcfd;
+        }
+
+        body[data-theme="dark"] label {
+
+            font-size: 18px;
+            display: block;
+            margin-top: 10px;
+            background: transparent;
+            color: #d7ba7d;
+        }
+
+        body[data-theme="dark"] input {
+            font-size: 18px;
+            padding: 10px;
+            width: 80%;
+            margin: 10px auto;
+            background: #333;
+            color: #9cdcfd;
+        }
+
+        body[data-theme="dark"] button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #9cdcfd;
+            color: #333;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover[data-theme="dark"] {
+            background-color: #0056b3;
+        }
+
+        #btn5[data-theme="dark"] {
+            background-color: #2ecc71;
+        }
+
+        #btn5:hover[data-theme="dark"] {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="preguntas.js"></script>
+    <h1>Generador de Preguntas</h1>
+
+    <label for="nombreJuego" id="labelnombreJuego">Nombre del Juego:</label>
+    <input type="text" id="nombreJuego" autofocus>
+
+    <label for="pregunta">Pregunta:</label>
+    <input type="text" id="pregunta">
+
+    <label for="respuesta">Respuesta:</label>
+    <input type="text" id="respuesta">
+
+    <label for="palabrasNecesarias">Palabras necesarias separadas por espacios:</label>
+    <input type="text" id="palabrasNecesarias">
+
+    <label for="ladoyporbuena">Palabras que doy por buenas:</label>
+    <input type="text" id="ladoyporbuena" value="-">
+
+    <label for="reglanemotecnica">Regla nemotécnica:</label>
+    <input type="text" id="reglanemotecnica">
+    <div>
+        <button id="btn1">Siguiente</button>
+        <button id="btn2">Guardar y Siguiente</button>
+        <button id="btn3">Atrás</button>
+        <button id="btn4">Adelante</button>
+        <button id="btn5">Generar JS</button>
+        <button id="btn6">Borrar Registro</button>
+        <button id="btn7">Nuevo Registro</button>
+    </div>
+    <div>
+
+        <button id="modoOscuro">Activar Modo Oscuro</button>
+    </div>
+    <script src="preguntas.js"></script>
+    <script>
+        const modoOscuroBtn = document.getElementById("modoOscuro");
+
+        modoOscuroBtn.addEventListener("click", () => {
+            const body = document.body;
+            if (body.getAttribute("data-theme") === "dark") {
+                body.removeAttribute("data-theme");
+                modoOscuroBtn.textContent = "Activar Modo Oscuro";
+            } else {
+                body.setAttribute("data-theme", "dark");
+                modoOscuroBtn.textContent = "Activar Modo Claro";
+            }
+        });
+    </script>
+    <script>
+        var spaceCount = 0;
+        //var absolutamentetodaslaspreguntas = [];
+        var nombreJuegoLabel = document.getElementById('labelnombreJuego')
+        var nombreJuegoInput = document.getElementById('nombreJuego');
+        var preguntaInput = document.getElementById('pregunta');
+        var respuestaInput = document.getElementById('respuesta');
+        var palabrasNecesariasInput = document.getElementById('palabrasNecesarias');
+        var ladoyporbuenaInput = document.getElementById('ladoyporbuena');
+        var reglanemotecnicaInput = document.getElementById('reglanemotecnica');
+        var currentIndex = -1; // Para navegar entre preguntas
+
+        var btn1 = document.getElementById('btn1');
+        var btn2 = document.getElementById('btn2');
+        var btn3 = document.getElementById('btn3');
+        var btn4 = document.getElementById('btn4');
+        var btn5 = document.getElementById('btn5');
+        var btn6 = document.getElementById('btn6');
+        var btn7 = document.getElementById('btn7');
+        if (nombreDelJuego !== undefined) {
+            nombreJuegoInput.value = nombreDelJuego;
+        }
+
+        // Función para leer el archivo preguntas.js
+        function leerArchivo() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "preguntas.js", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var archivoJS = xhr.responseText;
+                    eval(archivoJS); // Evalúa el contenido del archivo como JavaScript
+                    // Si se encontró un nombreDelJuego en el archivo, lo establece en el input
+                    if (typeof nombreDelJuego !== 'undefined') {
+                        nombreJuegoInput.value = nombreDelJuego;
+                    }
+                    // Si se encontró absolutamentetodaslaspreguntas en el archivo, lo establece en la variable
+                    if (Array.isArray(absolutamentetodaslaspreguntas)) {
+                        currentIndex = 0; // Establece el índice al principio del array
+                        mostrarPregunta(currentIndex); // Muestra la primera pregunta
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+
+        // Llama a la función para leer el archivo al cargar la página
+        leerArchivo();
+        function capitalizeFirstLetter(inputElement) {
+            var inputValue = inputElement.value;
+            if (inputValue.length > 0) {
+                inputElement.value = inputValue.charAt(0).toUpperCase() + inputValue.slice(1);
+            }
+        }
+
+        preguntaInput.addEventListener('keyup', function () {
+            capitalizeFirstLetter(preguntaInput);
+        });
+
+        respuestaInput.addEventListener('keyup', function () {
+            capitalizeFirstLetter(respuestaInput);
+        });
+
+        reglanemotecnicaInput.addEventListener('keyup', function () {
+            capitalizeFirstLetter(reglanemotecnicaInput);
+        });
+
+        nombreJuegoInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                btn1.focus();
+            }
+        });
+
+        // Agregar este evento keydown al botón "Siguiente"
+        btn1.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Evitar envío del formulario si está dentro de uno
+                btn1.click(); // Simular un clic en el botón "Siguiente"
+                preguntaInput.focus(); // Dar el foco al campo de entrada "Pregunta"
+            }
+        });
+        preguntaInput.addEventListener('keydown', function (event) {
+            if (event.key === ' ') {
+                spaceCount++;
+                if (spaceCount === 2) {
+                    // Si presionas espacio dos veces seguidas, agrega interrogantes
+                    this.value = '¿' + this.value.trim() + ' ?';
+                    spaceCount = 0; // Reinicia el contador de espacios
+                }
+            } else {
+                spaceCount = 0; // Reinicia el contador si presionas otra tecla
+            }
+        });
+        preguntaInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                respuestaInput.focus();
+            }
+        });
+
+        respuestaInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                palabrasNecesariasInput.focus();
+            }
+        });
+
+        palabrasNecesariasInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                guardarYSiguiente();
+                preguntaInput.focus();
+            }
+        });
+
+        btn2.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                guardarYSiguiente();
+                preguntaInput.focus();
+            }
+        });
+
+        btn1.addEventListener('click', function () {
+            nombreJuegoInput.style.display = 'none';
+            nombreJuegoLabel.style.display = 'none';
+            btn1.style.display = 'none';
+            preguntaInput.style.display = 'inline';
+            preguntaInput.focus();
+        });
+
+        btn2.addEventListener('click', guardarYSiguiente);
+
+        btn3.addEventListener('click', irAtras);
+
+        btn4.addEventListener('click', irAdelante);
+
+        btn5.addEventListener('click', function () {
+            generarJS();
+        });
+
+        btn6.addEventListener('click', borrarRegistro);
+        btn7.addEventListener('click', anadirotrapregunta);
+        function anadirotrapregunta() {
+            preguntaInput.value = "";
+            respuestaInput.value = "";
+            palabrasNecesariasInput.value = "";
+            ladoyporbuenaInput.value = "-";
+            respuestaInput.value = "";
+            nombreJuegoInput.style.display = 'none';
+            nombreJuegoLabel.style.display = 'none';
+            btn1.style.display = 'none';
+            preguntaInput.style.display = 'inline';
+            preguntaInput.focus();
+
+        }
+        function guardarYSiguiente() {
+            var pregunta = preguntaInput.value;
+            var respuesta = respuestaInput.value;
+            var palabrasNecesarias = palabrasNecesariasInput.value;
+            var ladoyporbuena = ladoyporbuenaInput.value;
+            var reglanemotecnica = reglanemotecnicaInput.value;
+
+            var preguntaObj = {
+                "pregunta": pregunta,
+                "respuesta": respuesta,
+                "palabrasNecesarias": palabrasNecesarias,
+                "Ladoyporbuena": ladoyporbuena,
+                "reglanemotecnica": reglanemotecnica
+            };
+
+            absolutamentetodaslaspreguntas.push(preguntaObj);
+            currentIndex = absolutamentetodaslaspreguntas.length - 1;
+
+            // Limpiar campos
+            preguntaInput.value = '';
+            respuestaInput.value = '';
+            palabrasNecesariasInput.value = '';
+            ladoyporbuenaInput.value = '-';
+            reglanemotecnica.value = '';
+
+            preguntaInput.focus();
+        }
+
+        function irAtras() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                mostrarPregunta(currentIndex);
+            }
+        }
+
+        function irAdelante() {
+            if (currentIndex < absolutamentetodaslaspreguntas.length - 1) {
+                currentIndex++;
+                mostrarPregunta(currentIndex);
+            }
+        }
+
+        function mostrarPregunta(index) {
+            preguntaInput.value = absolutamentetodaslaspreguntas[index].pregunta;
+            respuestaInput.value = absolutamentetodaslaspreguntas[index].respuesta;
+            palabrasNecesariasInput.value = absolutamentetodaslaspreguntas[index].palabrasNecesarias;
+            ladoyporbuenaInput.value = absolutamentetodaslaspreguntas[index].Ladoyporbuena;
+            reglanemotecnicaInput.value = absolutamentetodaslaspreguntas[index].reglanemotecnica;
+        }
+
+        function generarJS() {
+            var nombreDelJuego = nombreJuegoInput.value;
+
+            var jsCode = 'var nombreDelJuego = "' + nombreDelJuego + '";\n\n';
+            jsCode += 'var absolutamentetodaslaspreguntas = ' + JSON.stringify(absolutamentetodaslaspreguntas, null, 4) + ';\n';
+
+            var blob = new Blob([jsCode], { type: 'text/javascript' });
+            var url = URL.createObjectURL(blob);
+
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'preguntas.js';
+            a.click();
+        }
+
+        function borrarRegistro() {
+            if (currentIndex >= 0 && currentIndex < absolutamentetodaslaspreguntas.length) {
+                absolutamentetodaslaspreguntas.splice(currentIndex, 1);
+                if (currentIndex > 0) {
+                    currentIndex--;
+                }
+                if (absolutamentetodaslaspreguntas.length === 0) {
+                    // Si no quedan registros, limpiar los campos
+                    preguntaInput.value = '';
+                    respuestaInput.value = '';
+                    palabrasNecesariasInput.value = '';
+                    ladoyporbuenaInput.value = '-';
+                    reglanemotecnicaInput.value = '';
+                } else {
+                    mostrarPregunta(currentIndex);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
