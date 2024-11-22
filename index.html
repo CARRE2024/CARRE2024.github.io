@@ -49,6 +49,15 @@
             font-size: 14px;
         }
 
+        /* Estilo para el texto de la versión en la esquina superior izquierda */
+        .version-texto {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: gray;
+            font-size: 14px;
+        }
+
         @media (min-width: 600px) {
             .container {
                 flex-direction: row; /* Cambia a fila en pantallas más grandes */
@@ -68,7 +77,10 @@
     </style>
 </head>
 <body>
-    <!-- Elemento para mostrar la fecha en la esquina superior derecha -->
+    <!-- Texto en la esquina superior izquierda -->
+    <div class="version-texto">Versión 12</div>
+
+    <!-- Texto en la esquina superior derecha -->
     <div class="fecha-texto" id="fechaTexto"></div>
 
     <div class="container">
