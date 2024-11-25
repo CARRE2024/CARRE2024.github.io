@@ -252,31 +252,31 @@
                 const fila = document.createElement('tr');
 
                 const celdaStockAprox = document.createElement('td');
-                celdaStockAprox.textContent = result.stockAprox;
+                celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
                 fila.appendChild(celdaStockAprox);
 
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
                 linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
                 linkProducto.target = '_blank';
-                linkProducto.textContent = result.sup;
+                linkProducto.textContent = result.sup === '#N/A' ? '¿' : result.sup;
                 celdaSup.appendChild(linkProducto);
                 fila.appendChild(celdaSup);
 
                 const celdaNombreArticulo = document.createElement('td');
-                celdaNombreArticulo.textContent = result.nombreProducto;
+                celdaNombreArticulo.textContent = result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto;
                 fila.appendChild(celdaNombreArticulo);
 
                 const celdaPrecioAprox = document.createElement('td');
-                celdaPrecioAprox.textContent = result.precioAprox;
+                celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
                 fila.appendChild(celdaPrecioAprox);
 
                 const celdaoferta = document.createElement('td');
-                celdaoferta.textContent = result.oferta;
+                celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
                 fila.appendChild(celdaoferta);
 
                 const celdaSms = document.createElement('td');
-                celdaSms.textContent = result.sms;
+                celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
                 fila.appendChild(celdaSms);
 
                 const celdaEan = document.createElement('td');
