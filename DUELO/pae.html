@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        a {
+            color: inherit;
+            /* O color: black; */
+            text-decoration: none;
+        }
+
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        #search {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 32px;
+            /* Tamaño de fuente aumentado */
+        }
+
+        #searchButton,
+        #deleteStockZeroButton {
+
+            padding: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .barcode {
+            height: 80px;
+            cursor: pointer;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .modal img {
+            height: 200px;
+        }
+
+        /*.toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }*/
+
+        .toggle {
+            display: none;
+        }
+
+        .toggle-label {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle:checked+.toggle-label {
+            background-color: #4caf50;
+        }
+
+        .toggle:checked+.toggle-label::before {
+            transform: translateX(30px);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="pae.js">
+
+       
+    </script>
+
+
+</head>
+
+<body>
+
+    <div id="searchContainer">
+        <input type="text" id="search" oninput="ponerMayusculas()">
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <!--</div>-->
+    </div>
+
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>Stock</th>
+                <th>Sup</th>
+                <th>Nombre del producto</th>
+                <th id="precioAproxHeader">Precio aprox</th>
+                <th>Oferta</th>
+                <th>SMS</th>
+                <th>EAN</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se insertarán los datos -->
+        </tbody>
+    </table>
+
+    <!-- Modal para mostrar el código de barras -->
+    <div id="barcodeModal" class="modal" onclick="cerrarModal()">
+        <div class="modal-content">
+            <img id="modalBarcodeImage" alt="Código de barras">
+        </div>
+    </div>
+
+    <script>
+        let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
+
+
+        function ponerMayusculas() {
+            const textoEscrito = document.getElementById('search');
+            textoEscrito.value = textoEscrito.value.toUpperCase();
+        }
+
+        function filtrarTabla() {
+            const entrada = document.getElementById('search').value.toLowerCase();
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            const filas = data.trim().split('\n');
+            const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
+
+            resultadosFiltrados = [];
+
+            filas.forEach(row => {
+                const columnas = row.split(';');
+                const nombreProducto = columnas[5].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+
+                //const nombreProducto = columnas[5].toLowerCase();
+
+                const contieneTodosTerminos = terminosBuscados.every(term => nombreProducto.includes(term));
+
+                if (contieneTodosTerminos) {
+                    resultadosFiltrados.push({
+                        nombreProducto: columnas[5].trim(),
+                        sms: columnas[6].trim(),
+                        ean: columnas[7].trim(),
+                        sup: columnas[10].trim(),
+                        precioAprox: columnas[11].trim(),
+                        oferta: columnas[13].trim(),
+                        stockAprox: columnas[12].trim(),
+                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
+                    });
+                }
+            });
+
+            // Ordenar los resultados
+            ordenarResultados();
+            renderizarResultados();
+            document.getElementById('toggle').checked = false;
+            // Cambiar visibilidad de botones
+            // document.getElementById('searchButton').style.display = 'none';
+            document.getElementById('deleteStockZeroButton').style.display = 'inline-block';
+        }
+
+        function ordenarResultados() {
+            resultadosFiltrados.sort((a, b) => {
+                const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
+                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
+
+                // Primero, ordenar por porcentaje (descendente)
+                if (porcentajeA !== porcentageB) {
+                    return porcentageB - porcentajeA;
+                } else {
+                    // Luego, ordenar por precio (descendente)
+                    return (b.valorPrecio || 0) - (a.valorPrecio || 0);
+                }
+            });
+        }
+
+        function renderizarResultados() {
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            resultadosFiltrados.forEach(result => {
+                const fila = document.createElement('tr');
+
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
+                fila.appendChild(celdaStockAprox);
+
+                const celdaSup = document.createElement('td');
+                const linkProducto = document.createElement('a');
+                linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
+                linkProducto.target = '_blank';
+                linkProducto.textContent = result.sup === '#N/A' ? '¿' : result.sup;
+                celdaSup.appendChild(linkProducto);
+                fila.appendChild(celdaSup);
+
+                const celdaNombreArticulo = document.createElement('td');
+                celdaNombreArticulo.textContent = result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto;
+                fila.appendChild(celdaNombreArticulo);
+
+                const celdaPrecioAprox = document.createElement('td');
+
+                celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
+                fila.appendChild(celdaPrecioAprox);
+
+                const celdaoferta = document.createElement('td');
+                celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
+                fila.appendChild(celdaoferta);
+
+                const celdaSms = document.createElement('td');
+                celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
+                fila.appendChild(celdaSms);
+
+                const celdaEan = document.createElement('td');
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
+                fila.appendChild(celdaEan);
+
+
+
+                cuerpoTabla.appendChild(fila);
+            });
+        }
+
+        function eliminarStock0() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            renderizarResultados();
+
+
+        }
+
+
+
+        function mostrarCodigoBarras(reference) {
+            const modal = document.getElementById('barcodeModal');
+            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalBarcodeImage, reference, {
+                width: 4,
+                height: 200
+            });
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById('barcodeModal');
+            modal.style.display = 'none';
+        }
+
+
+
+        const toggle = document.getElementById('toggle');
+
+
+
+        // Evento para cambiar entre modos
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+
+            }
+        });
+        function setupHeaderClick() {
+            const precioAproxHeader = document.getElementById('precioAproxHeader');
+            precioAproxHeader.addEventListener('click', simplificacion);
+        }
+
+       function simplificacion() {
+    // Ordenar los resultados filtrados según el penúltimo valor (precio) de menor a mayor
+    resultadosFiltrados.sort((a, b) => {
+        // Extraemos los valores de precio (sin '€' y con el reemplazo de coma por punto)
+        const precioA = parseFloat(a.precioAprox.replace('€', '').replace(',', '.')) || 0;
+        const precioB = parseFloat(b.precioAprox.replace('€', '').replace(',', '.')) || 0;
+
+        // Ordenamos por precio de menor a mayor
+        return precioA - precioB;
+    });
+
+    // Después de ordenar, renderizamos los resultados nuevamente
+    renderizarResultados();
+}
+        window.onload = () => {
+            setupHeaderClick();
+            filtrarTabla(); // Esto mantiene la funcionalidad actual de filtrar la tabla
+        };
+
+
+    </script>
+</body>
+
+</html>
