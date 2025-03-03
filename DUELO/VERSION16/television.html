@@ -174,20 +174,6 @@
         .toggle2:checked+.toggle-label2::before {
             transform: translateX(30px);
         }
-
-        #toggleContainer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .toggle-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="television.js">
@@ -205,22 +191,11 @@
         <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
         <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
         <!--<div class="toggle-container">-->
-       
-
-
-        <div id="toggleContainer">
-            <div class="toggle-wrapper">
-                <input type="checkbox" id="toggle" class="toggle">
-                <label for="toggle" class="toggle-label"></label>
-                <span>ELIMINAR STOCK 0 EN TIENDA</span>
-            </div>
-        
-            <div class="toggle-wrapper">
-                <input type="checkbox" id="toggle2" class="toggle2">
-                <label for="toggle2" class="toggle-label2"></label>
-                <span>AL MENOS 2 UNIDADES</span>
-            </div>
-        </div>
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <input type="checkbox" id="toggle2" class="toggle2">
+        <label for="toggle2" class="toggle-label2"></label>AL MENOS 2 UNIDADES
+        <!--</div>-->
     </div>
 
     <table id="productTable">
@@ -377,7 +352,7 @@
         }
 
         function eliminarStock0() {
-
+            
             resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
             renderizarResultados();
 
