@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<link rel="stylesheet" href="estilos.css">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="television.js">
+
+
+    </script>
+
+
+</head>
+
+<body>
+
+    <div id="searchContainer">
+        <input type="text" id="search" oninput="ponerMayusculas()">
+        <input type="text" id="palabrasEscuchadas" oninput="ponerMayusculas()">
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <input type="checkbox" id="toggle2" class="toggle2">
+        <label for="toggle2" class="toggle-label2"></label>AL MENOS 2 UNIDADES
+        <button id="microphoneButton" class="icon-button">
+            <img src="microfono.png" alt="Micrófono">
+        </button>
+        <!--</div>-->
+    </div>
+
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>Stock</th>
+                <th>Sup</th>
+                <th>Nombre del producto</th>
+                <th id="precioAproxHeader">Precio aprox</th>
+                <th>Oferta</th>
+                <th>SMS</th>
+                <th>EAN</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se insertarán los datos -->
+        </tbody>
+    </table>
+
+    <!-- Modal para mostrar el código de barras -->
+    <div id="barcodeModal" class="modal" onclick="cerrarModal()">
+        <div class="modal-content">
+            <img id="modalBarcodeImage" alt="Código de barras">
+        </div>
+    </div>
+
+    <script>
+        let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
+
+
+        function ponerMayusculas() {
+            const textoEscrito = document.getElementById('search');
+            textoEscrito.value = textoEscrito.value.toUpperCase();
+        }
+
+        function filtrarTabla() {
+            const entrada = document.getElementById('search').value.toLowerCase();
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            const filas = data.trim().split('\n');
+            const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
+
+            resultadosFiltrados = [];
+
+            filas.forEach(row => {
+                const columnas = row.split(';');
+                const nombreProducto = columnas[5].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+
+                //const nombreProducto = columnas[5].toLowerCase();
+
+                const contieneTodosTerminos = terminosBuscados.every(term => nombreProducto.includes(term));
+
+                if (contieneTodosTerminos) {
+                    resultadosFiltrados.push({
+                        nombreProducto: columnas[5].trim(),
+                        sms: columnas[6].trim(),
+                        ean: columnas[7].trim(),
+                        sup: columnas[10].trim(),
+                        precioAprox: columnas[11].trim(),
+                        oferta: columnas[13].trim(),
+                        stockAprox: columnas[12].trim(),
+                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
+                    });
+                }
+            });
+
+            ordenarResultados();
+            renderizarResultados();
+            document.getElementById('toggle').checked = false;
+
+            document.getElementById('deleteStockZeroButton').style.display = 'inline-block';
+        }
+
+        function ordenarResultados() {
+            resultadosFiltrados.sort((a, b) => {
+                const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
+                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
+
+                // Primero, ordenar por porcentaje (descendente)
+                if (porcentajeA !== porcentageB) {
+                    return porcentageB - porcentajeA;
+                } else {
+                    // Luego, ordenar por precio (descendente)
+                    return (b.valorPrecio || 0) - (a.valorPrecio || 0);
+                }
+            });
+        }
+
+        function renderizarResultados() {
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            resultadosFiltrados.forEach(result => {
+                const fila = document.createElement('tr');
+
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
+                fila.appendChild(celdaStockAprox);
+
+                const celdaSup = document.createElement('td');
+                const linkProducto = document.createElement('a');
+                linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
+                linkProducto.target = '_blank';
+                linkProducto.textContent = result.sup;
+
+                // Copiar EAN al portapapeles antes de abrir el enlace
+                linkProducto.onclick = (event) => {
+                    event.preventDefault();
+                    navigator.clipboard.writeText(result.ean).then(() => {
+                        window.open(linkProducto.href, '_blank');
+                    });
+                };
+
+                celdaSup.appendChild(linkProducto);
+                fila.appendChild(celdaSup);
+
+                const celdaNombreArticulo = document.createElement('td');
+                celdaNombreArticulo.textContent = result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto;
+                fila.appendChild(celdaNombreArticulo);
+
+                const celdaPrecioAprox = document.createElement('td');
+
+                celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
+                fila.appendChild(celdaPrecioAprox);
+
+                const celdaoferta = document.createElement('td');
+                celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
+                fila.appendChild(celdaoferta);
+
+                const celdaSms = document.createElement('td');
+                celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
+                fila.appendChild(celdaSms);
+
+                const celdaEan = document.createElement('td');
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
+                fila.appendChild(celdaEan);
+
+
+
+                cuerpoTabla.appendChild(fila);
+            });
+        }
+
+        function eliminarStock0() {
+
+            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            renderizarResultados();
+
+
+        }
+        function eliminarStockMenor2() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => Number(result.stockAprox) > 1);
+
+            renderizarResultados();
+
+
+        }
+
+
+
+        function mostrarCodigoBarras(reference) {
+            const modal = document.getElementById('barcodeModal');
+            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalBarcodeImage, reference, {
+                width: 4,
+                height: 200
+            });
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById('barcodeModal');
+            modal.style.display = 'none';
+        }
+
+
+
+        const toggle = document.getElementById('toggle');
+
+
+
+        // Evento para cambiar entre modos
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+
+            }
+        });
+
+
+
+        toggle2.addEventListener('change', () => {
+            if (toggle2.checked) {
+                eliminarStockMenor2();
+            } else {
+                filtrarTabla();
+
+            }
+        });
+
+
+
+        function setupHeaderClick() {
+            const precioAproxHeader = document.getElementById('precioAproxHeader');
+            precioAproxHeader.addEventListener('click', simplificacion);
+        }
+
+        function simplificacion() {
+            // Ordenar los resultados filtrados según el penúltimo valor (precio) de menor a mayor
+            resultadosFiltrados.sort((a, b) => {
+                // Extraemos los valores de precio (sin '€' y con el reemplazo de coma por punto)
+                const precioA = parseFloat(a.precioAprox.replace('€', '').replace(',', '.')) || 0;
+                const precioB = parseFloat(b.precioAprox.replace('€', '').replace(',', '.')) || 0;
+
+                // Ordenamos por precio de menor a mayor
+                return precioA - precioB;
+            });
+
+            // Después de ordenar, renderizamos los resultados nuevamente
+            renderizarResultados();
+        }
+
+        document.getElementById("search").addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Evita que se envíe un formulario si existiera
+                document.getElementById("searchButton").click(); // Simula el clic en el botón de búsqueda
+            }
+        });
+        window.onload = () => {
+            setupHeaderClick();
+            filtrarTabla(); // Esto mantiene la funcionalidad actual de filtrar la tabla
+        };
+
+
+    </script>
+
+    <script>
+
+        const microphoneButton = document.getElementById("microphoneButton");
+        const palabrasEscuchadasInput = document.getElementById("palabrasEscuchadas");
+        const searchInput = document.getElementById("search");
+
+        let escuchaEnBruto = "";
+        let loqueescucha = "";
+
+        const palabrasAEncontrar = {
+            "tcl": "TCL",
+            "tc": "TCL",
+            "samsung": "SAMSUNG",
+            "philips": "PHILIPS",
+            "haier": "HAIER",
+            "javi": "HAIER",
+            "high": "HAIER",
+            "ha": "HAIER",
+            "javier": "HAIER",
+            "hai": "HAIER",
+            "eje": "LG",
+            "el": "LG",
+            "lg": "LG",
+            "l": "LG",
+            "dae": "DAEWOO",
+            "da": "DAEWOO",
+            "daewoo": "DAEWOO",
+            "toshiba": "TOSHIBA",
+            "to": "TOSHIBA",
+            "tos": "TOSHIBA",
+            "toshi": "TOSHIBA",
+            "qle": "QLED",
+            "qled": "QLED",
+            "culé": "QLED",
+            "culés": "QLED",
+            "cooler": "QLED",
+            "qr": "QLED",
+            "q": "QLED",
+            "mini": "MINILED",
+            "minile": "MINILED",
+            "minidez": "MINILED",
+            "oled": "OLED",
+            "ole": "OLED",
+            "olé": "OLED",
+            "sense": "HISENSE",
+            "hisense": "HISENSE",
+            "sen": "HISENSE",
+            "vicens": "HISENSE",
+            "essens": "HISENSE",
+            "his": "HISENSE",
+            "hisen": "HISENSE",
+            "hi": "HISENSE",
+            "vicen": "HISENSE",
+            "qned": "QNED",
+            "qne": "QNED",
+            "cu": "QNED",
+            "cune": "QNED",
+            "cuned": "QNED",
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "11": "11",
+            "12": "12",
+            "13": "13",
+            "14": "14",
+            "15": "15",
+            "16": "16",
+            "17": "17",
+            "18": "18",
+            "19": "19",
+            "20": "20",
+            "21": "21",
+            "22": "22",
+            "23": "23",
+            "24": "24",
+            "25": "25",
+            "26": "26",
+            "27": "27",
+            "28": "28",
+            "29": "29",
+            "30": "30",
+            "31": "31",
+            "32": "32",
+            "33": "33",
+            "34": "34",
+            "35": "35",
+            "36": "36",
+            "37": "37",
+            "38": "38",
+            "39": "39",
+            "40": "40",
+            "41": "41",
+            "42": "42",
+            "43": "43",
+            "44": "44",
+            "45": "45",
+            "46": "46",
+            "47": "47",
+            "48": "48",
+            "49": "49",
+            "50": "50",
+            "51": "51",
+            "52": "52",
+            "53": "53",
+            "54": "54",
+            "55": "55",
+            "56": "56",
+            "57": "57",
+            "58": "58",
+            "59": "59",
+            "60": "60",
+            "61": "61",
+            "62": "62",
+            "63": "63",
+            "64": "64",
+            "65": "65",
+            "66": "66",
+            "67": "67",
+            "68": "68",
+            "69": "69",
+            "70": "70",
+            "71": "71",
+            "72": "72",
+            "73": "73",
+            "74": "74",
+            "75": "75",
+            "76": "76",
+            "77": "77",
+            "78": "78",
+            "79": "79",
+            "80": "80",
+            "81": "81",
+            "82": "82",
+            "83": "83",
+            "84": "84",
+            "85": "85",
+            "86": "86",
+            "87": "87",
+            "88": "88",
+            "89": "89",
+            "90": "90",
+            "91": "91",
+            "92": "92",
+            "93": "93",
+            "94": "94",
+            "95": "95",
+            "96": "96",
+            "97": "97",
+            "98": "98",
+            "99": "99",
+            "100": "100",
+            "101": "101",
+            "102": "102",
+            "103": "103",
+            "104": "104",
+            "105": "105",
+            "106": "106",
+            "107": "107",
+            "108": "108",
+            "109": "109",
+            "110": "110",
+            "111": "111",
+            "112": "112",
+            "113": "113",
+            "114": "114",
+            "115": "115",
+            "116": "116",
+            "117": "117",
+            "118": "118",
+            "119": "119",
+            "120": "120",
+            "121": "121",
+            "122": "122",
+            "123": "123",
+            "124": "124",
+            "125": "125",
+            "126": "126",
+            "127": "127",
+            "128": "128",
+            "129": "129",
+            "130": "130",
+            "131": "131",
+            "132": "132",
+            "133": "133",
+            "134": "134",
+            "135": "135",
+            "136": "136",
+            "137": "137",
+            "138": "138",
+            "139": "139",
+            "140": "140",
+            "141": "141",
+            "142": "142",
+            "143": "143",
+            "144": "144",
+            "145": "145",
+            "146": "146",
+            "147": "147",
+            "148": "148",
+            "149": "149",
+            "150": "150",
+            "151": "151",
+            "152": "152",
+            "153": "153",
+            "154": "154",
+            "155": "155",
+            "156": "156",
+            "157": "157",
+            "158": "158",
+            "159": "159",
+            "160": "160",
+            "161": "161",
+            "162": "162",
+            "163": "163",
+            "164": "164",
+            "165": "165",
+            "166": "166",
+            "167": "167",
+            "168": "168",
+            "169": "169",
+            "170": "170",
+            "171": "171",
+            "172": "172",
+            "173": "173",
+            "174": "174",
+            "175": "175",
+            "176": "176",
+            "177": "177",
+            "178": "178",
+            "179": "179",
+            "180": "180",
+            "181": "181",
+            "182": "182",
+            "183": "183",
+            "184": "184",
+            "185": "185",
+            "186": "186",
+            "187": "187",
+            "188": "188",
+            "189": "189",
+            "190": "190",
+            "191": "191",
+            "192": "192",
+            "193": "193",
+            "194": "194",
+            "195": "195",
+            "196": "196",
+            "197": "197",
+            "198": "198",
+            "199": "199",
+            "200": "200",
+            "201": "201",
+            "202": "202",
+            "203": "203",
+            "204": "204",
+            "205": "205",
+            "veintiuno": "21",
+            "veintidos": "22",
+            "veintitres": "23",
+            "veintitrés": "23",
+            "veinticuatro": "24",
+            "veinticinco": "25",
+            "veintiseis": "26",
+            "veintiséis": "26",
+            "veintisiete": "27",
+            "veintiocho": "28",
+            "veintinueve": "29"
+        };
+
+        const numerosEnTexto = {
+            "cero": 0, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5,
+            "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10,
+            "once": 11, "doce": 12, "trece": 13, "catorce": 14, "quince": 15,
+            "dieciséis": 16, "diecisiete": 17, "dieciocho": 18, "diecinueve": 19,
+            "veinte": 20, "treinta": 30, "cuarenta": 40, "cincuenta": 50,
+            "sesenta": 60, "setenta": 70, "ochenta": 80, "noventa": 90,
+            "cien": 100, "doscientos": 200, "trescientos": 300, "cuatrocientos": 400,
+            "quinientos": 500, "seiscientos": 600, "setecientos": 700, "ochocientos": 800,
+            "novecientos": 900, "mil": 1000
+        };
+
+        let recognition;
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous =false;
+            recognition.interimResults = false;
+            recognition.lang = "es-ES";
+
+            recognition.onresult = function (event) {
+                let interimTranscript = "";
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        escuchaEnBruto += event.results[i][0].transcript + " ";
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+            };
+        }
+
+        microphoneButton.addEventListener("mousedown", () => {
+            escuchaEnBruto = "";
+            recognition.start();
+        });
+
+        microphoneButton.addEventListener("mouseup", () => {
+            recognition.stop();
+            setTimeout(() => {
+                loqueescucha = escuchaEnBruto.trim().toLowerCase();
+                palabrasEscuchadasInput.value = loqueescucha;
+                procesarPalabras(loqueescucha);
+            }, 500);
+        });
+
+        function procesarPalabras(texto) {
+            let palabras = texto.split(" ");
+            let coincidencias = new Set();
+            let acumulador = 0;
+            let esCiento = palabras[0] === "ciento"; // Verifica si empieza con "ciento"
+
+            palabras.forEach((palabra, index) => {
+                if (numerosEnTexto[palabra] !== undefined) {
+                    acumulador += numerosEnTexto[palabra];
+                } else if (palabra === "y") {
+                    return; // Ignorar "y" en números compuestos (ej. "cuarenta y cinco")
+                } else {
+                    // Si acumulador tiene un número, lo guardamos antes de procesar la nueva palabra
+                    if (acumulador > 0) {
+                        coincidencias.add(acumulador);
+                        acumulador = 0;
+                    }
+
+                    // Si la palabra está en palabrasAEncontrar, la añadimos
+                    if (palabrasAEncontrar[palabra]) {
+                        coincidencias.add(palabrasAEncontrar[palabra]);
+                    }
+                }
+            });
+
+            if (acumulador > 0) {
+                coincidencias.add(acumulador);
+            }
+
+            // Si empezó con "ciento" y hay un número, añadimos "1" delante
+            let resultadoFinal = Array.from(coincidencias).map(item => {
+                return typeof item === "number" && esCiento ? "1" + item : item;
+            });
+
+            searchInput.value = resultadoFinal.join(",");
+        }
+
+
+
+    </script>
+
+</body>
+
+</html>
