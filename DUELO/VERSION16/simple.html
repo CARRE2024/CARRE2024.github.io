@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition</title>
+</head>
+<body>
+    <button id="microphoneButton" class="icon-button">
+        ESCUCHAR
+    </button>
+    <input type="text" id="loqueescucha" size="50"><br>
+    <input type="text" id="provisional" size="50"><br>
+    <input type="text" id="search" size="50">
+
+    <script>
+        const palabrasclave = {
+            'CULES': 'QLED',
+            'CULE': 'QLED',
+            'QLED': 'QLED',
+            'OLED': 'OLED',
+            'OLE': 'OLED',
+            'QNEXT': 'QNED',
+            'CUNET': 'QNED',
+            'MINI': 'MINILED',
+            'SAMSUNG': 'SAMSUNG',
+            'TOSHIBA': 'TOSHIBA',
+            'LG': 'LG',
+            'EJE': 'LG',
+            'DAEWOO': 'DAEWOO',
+            'PHILIPS': 'PHILIPS',
+            'TCL': 'TCL',
+            'MANOLO Y PEPE': 'ANTONIO',
+            'TREINTA Y DOS':'32',
+            'CUARENTA Y TRES':'43',
+            'CINCUENTA':'50',
+            'CINCUENTA Y CINCO':'55',
+            'SESENTA Y CINCO':'65',
+            'SETENTA Y CINCO':'75'
+        };
+
+        const button = document.getElementById('microphoneButton');
+        const loqueescuchaInput = document.getElementById('loqueescucha');
+        const provisionalInput = document.getElementById('provisional');
+        const searchInput = document.getElementById('search');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        
+        recognition.continuous = false;
+        recognition.lang = 'es-ES';
+        
+        button.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript;
+            loqueescuchaInput.value = result; // Mostrar resultado sin formatear
+            const formattedResult = formatSpeech(result);
+            provisionalInput.value = formattedResult;
+
+            let searchText = formattedResult;
+            for (const [key, value] of Object.entries(palabrasclave)) {
+                const regex = new RegExp(`\\b${key}\\b`, 'gi');
+                searchText = searchText.replace(regex, value);
+            }
+
+            const parts = searchText.split(' ')
+                .map(part => part.trim())
+                .filter(part => Object.values(palabrasclave).includes(part));
+            
+            searchInput.value = parts.join(',');
+        };
+
+        function formatSpeech(speech) {
+            const removeAccents = (text) => {
+                return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            };
+
+            const words = removeAccents(speech).toUpperCase();
+            return words;
+        }
+    </script>
+</body>
+</html>
