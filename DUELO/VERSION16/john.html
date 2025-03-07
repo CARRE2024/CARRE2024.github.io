@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition</title>
+</head>
+<body>
+    <button id="microphoneButton" class="icon-button">
+        ESCUCHAR
+    </button>
+    <input type="text" id="loqueescucha" size="50"><br>
+    <input type="text" id="provisional" size="50"><br>
+    <input type="text" id="search" size="50">
+
+    <script>
+        const palabrasclave = {
+            'CULES': 'QLED',
+            'CULE': 'QLED',
+            'QLED': 'QLED',
+            'OLED': 'OLED',
+            'OLE': 'OLED',
+            'QNEXT': 'QNED',
+            'CUNET': 'QNED',
+            'MINI': 'MINILED',
+            'SAMSUNG': 'SAMSUNG',
+            'TOSHIBA': 'TOSHIBA',
+            'LG': 'LG',
+            'EJE': 'LG',
+            'DAEWOO': 'DAEWOO',
+            'PHILIPS': 'PHILIPS',
+            'TCL': 'TCL',
+        };
+
+        const button = document.getElementById('microphoneButton');
+        const loqueescuchaInput = document.getElementById('loqueescucha');
+        const provisionalInput = document.getElementById('provisional');
+        const searchInput = document.getElementById('search');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        
+        recognition.continuous = false;
+        recognition.lang = 'es-ES';
+        
+        button.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript;
+            loqueescuchaInput.value = result; // Mostrar resultado sin formatear
+            const formattedResult = formatSpeech(result);
+            provisionalInput.value = formattedResult;
+
+            const parts = formattedResult.split(' ').map(part => formatPart(part)).filter(Boolean);
+            searchInput.value = parts.join(',');
+        };
+
+        function formatPart(part) {
+            part = part.trim();
+            if (!isNaN(Number(part))) {
+                return part;
+            } else if (palabrasclave[part]) {
+                return palabrasclave[part];
+            } else {
+                return null; // No incluir en el resultado final
+            }
+        }
+
+        function formatSpeech(speech) {
+            const numberWordsToDigits = (text) => {
+                const wordsToDigits = {
+                    'cero': 0, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 
+                    'cinco': 5, 'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9,
+                    'diez': 10, 'once': 11, 'doce': 12, 'trece': 13, 'catorce': 14, 'quince': 15,
+                    'dieciséis': 16, 'diecisiete': 17, 'dieciocho': 18, 'diecinueve': 19,
+                    'veinte': 20, 'treinta': 30, 'cuarenta': 40, 'cincuenta': 50, 
+                    'sesenta': 60, 'setenta': 70, 'ochenta': 80, 'noventa': 90,
+                    'cien': 100, 'ciento': 100, 'doscientos': 200, 'trescientos': 300,
+                    'cuatrocientos': 400, 'quinientos': 500, 'seiscientos': 600, 
+                    'setecientos': 700, 'ochocientos': 800, 'novecientos': 900,
+                    'mil': 1000
+                };
+                
+                return text.split(' ').map(word => wordsToDigits[word] !== undefined ? wordsToDigits[word] : word).join(' ');
+            };
+
+            const removeAccents = (text) => {
+                return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            };
+
+            const words = numberWordsToDigits(removeAccents(speech).toUpperCase());
+            const wordsArray = words.split(' ');
+
+            return wordsArray.map(word => {
+                if (!isNaN(Number(word))) {
+                    return word;
+                } else {
+                    return word;
+                }
+            }).join(' ');
+        }
+    </script>
+</body>
+</html>
