@@ -30,19 +30,8 @@
             'DAEWOO': 'DAEWOO',
             'PHILIPS': 'PHILIPS',
             'TCL': 'TCL',
-        };
-
-        const wordsToDigits = {
-            'cero': 0, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 
-            'cinco': 5, 'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9,
-            'diez': 10, 'once': 11, 'doce': 12, 'trece': 13, 'catorce': 14, 'quince': 15,
-            'dieciséis': 16, 'diecisiete': 17, 'dieciocho': 18, 'diecinueve': 19,
-            'veinte': 20, 'treinta': 30, 'cuarenta': 40, 'cincuenta': 50, 
-            'sesenta': 60, 'setenta': 70, 'ochenta': 80, 'noventa': 90,
-            'cien': 100, 'ciento': 100, 'doscientos': 200, 'trescientos': 300,
-            'cuatrocientos': 400, 'quinientos': 500, 'seiscientos': 600, 
-            'setecientos': 700, 'ochocientos': 800, 'novecientos': 900,
-            'mil': 1000
+            'MANOLO Y PEPE': 'ANTONIO',
+            'TREINTA Y TRES':'33'
         };
 
         const button = document.getElementById('microphoneButton');
@@ -64,25 +53,32 @@
             const formattedResult = formatSpeech(result);
             provisionalInput.value = formattedResult;
 
-            const parts = formattedResult.split(' ').map(part => formatPart(part)).filter(Boolean);
+            let searchText = formattedResult;
+            for (const [key, value] of Object.entries(palabrasclave)) {
+                const regex = new RegExp(`\\b${key}\\b`, 'gi');
+                searchText = searchText.replace(regex, value);
+            }
+
+            const parts = searchText.split(' ').filter(Boolean);
             searchInput.value = parts.join(',');
         };
 
-        function formatPart(part) {
-            part = part.trim().toUpperCase();
-            if (!isNaN(Number(part))) {
-                return part;
-            } else if (palabrasclave[part]) {
-                return palabrasclave[part];
-            } else {
-                const numberWord = numberWordsToDigits(part);
-                return !isNaN(Number(numberWord)) ? numberWord : null;
-            }
-        }
-
         function formatSpeech(speech) {
             const numberWordsToDigits = (text) => {
-                return text.split(' ').map(word => wordsToDigits[word.toUpperCase()] !== undefined ? wordsToDigits[word.toUpperCase()] : word).join(' ');
+                const wordsToDigits = {
+                    'cero': 0, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 
+                    'cinco': 5, 'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9,
+                    'diez': 10, 'once': 11, 'doce': 12, 'trece': 13, 'catorce': 14, 'quince': 15,
+                    'dieciséis': 16, 'diecisiete': 17, 'dieciocho': 18, 'diecinueve': 19,
+                    'veinte': 20, 'treinta': 30, 'cuarenta': 40, 'cincuenta': 50, 
+                    'sesenta': 60, 'setenta': 70, 'ochenta': 80, 'noventa': 90,
+                    'cien': 100, 'ciento': 100, 'doscientos': 200, 'trescientos': 300,
+                    'cuatrocientos': 400, 'quinientos': 500, 'seiscientos': 600, 
+                    'setecientos': 700, 'ochocientos': 800, 'novecientos': 900,
+                    'mil': 1000
+                };
+                
+                return text.split(' ').map(word => wordsToDigits[word] !== undefined ? wordsToDigits[word] : word).join(' ');
             };
 
             const removeAccents = (text) => {
@@ -90,15 +86,7 @@
             };
 
             const words = numberWordsToDigits(removeAccents(speech).toUpperCase());
-            const wordsArray = words.split(' ');
-
-            return wordsArray.map(word => {
-                if (!isNaN(Number(word))) {
-                    return word;
-                } else {
-                    return word;
-                }
-            }).join(' ');
+            return words;
         }
     </script>
 </body>
