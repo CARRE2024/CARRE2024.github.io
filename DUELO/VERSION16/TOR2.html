@@ -15,6 +15,16 @@
 
     <script>
         const palabrasclave = {
+            'CINCUENTA Y CINCO': '55',
+            'TREINTA Y DOS': '32',
+            'CUARENTA Y TRES': '43',
+            'CINCUENTA': '50',
+            'SESENTA Y CINCO': '65',
+            'SETENTA Y CINCO': '75',
+            'VEINTICUATRO': '24',
+            'VEINTIOCHO': '28',
+            'HISENSE': 'HISENSE',
+            'CIENTO OCHENTA Y OCHO': '188',
             'CULES': 'QLED',
             'CULE': 'QLED',
             'QLED': 'QLED',
@@ -30,17 +40,7 @@
             'DAEWOO': 'DAEWOO',
             'PHILIPS': 'PHILIPS',
             'TCL': 'TCL',
-            'MANOLO Y PEPE': 'ANTONIO',
-            'TREINTA Y DOS': '32',
-            'CUARENTA Y TRES': '43',
-            'CINCUENTA': '50',
-            'CINCUENTA Y CINCO': '55',
-            'SESENTA Y CINCO': '65',
-            'SETENTA Y CINCO': '75',
-            'VEINTICUATRO': '24',
-            'VEINTIOCHO': '28',
-            'HISENSE': 'HISENSE',
-            'CIENTO OCHENTA Y OCHO': '188'
+            'MANOLO Y PEPE': 'ANTONIO'
         };
 
         const button = document.getElementById('microphoneButton');
@@ -48,10 +48,10 @@
         const provisionalInput = document.getElementById('provisional');
         const searchInput = document.getElementById('search');
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-
+        
         recognition.continuous = false;
         recognition.lang = 'es-ES';
-
+        
         button.addEventListener('click', () => {
             recognition.start();
         });
@@ -63,15 +63,18 @@
             provisionalInput.value = formattedResult;
 
             let searchText = formattedResult;
+
+            // Primero, reemplazar las frases completas
             for (const [key, value] of Object.entries(palabrasclave)) {
-                const regex = new RegExp(`\\b${key.replace(/\s+/g, '\\s+')}\\b`, 'gi');
+                const regex = new RegExp(`\\b${key}\\b`, 'gi');
                 searchText = searchText.replace(regex, value);
             }
 
+            // Luego, reemplazar las palabras individuales restantes
             const parts = searchText.split(' ')
                 .map(part => part.trim())
                 .filter(part => Object.values(palabrasclave).includes(part));
-
+            
             searchInput.value = parts.join(',');
         };
 
