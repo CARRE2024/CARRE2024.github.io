@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Responsive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: rgb(230, 110, 12);
+            font-family: Arial, sans-serif;
+            position: relative; /* Permite posicionar elementos absolutos */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column; /* Cambia a columna para móviles */
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Ocupa toda la altura de la ventana */
+        }
+
+        .button {
+            margin: 10px; /* Espaciado entre botones */
+            text-decoration: none; /* Sin subrayado en el enlace */
+        }
+
+        .button img {
+            width: 100px; /* Ajusta el tamaño de las imágenes */
+            height: auto; /* Mantiene la proporción de las imágenes */
+            transition: transform 0.2s; /* Animación de hover */
+        }
+
+        .button:hover img {
+            transform: scale(1.1); /* Efecto de aumento al pasar el mouse */
+        }
+
+        /* Estilo para el texto de la fecha en la esquina superior derecha */
+        .fecha-texto {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: gray;
+            font-size: 14px;
+        }
+
+        /* Estilo para el texto de la versión en la esquina superior izquierda */
+        .version-texto {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: gray;
+            font-size: 14px;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                flex-direction: row; /* Cambia a fila en pantallas más grandes */
+                flex-wrap: wrap; /* Permite que los botones se envuelvan */
+            }
+        }
+
+        /* Asegúrate de que cada botón ocupe el 50% del ancho en pantallas pequeñas */
+        @media (max-width: 600px) {
+            .button {
+                width: 50%; /* Cada botón ocupará el 50% del ancho */
+                display: flex; /* Para centrar la imagen dentro del botón */
+                justify-content: center;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Texto en la esquina superior izquierda -->
+    <div class="version-texto">Versión 17 BETA</div>
+
+    <!-- Texto en la esquina superior derecha -->
+    <div class="fecha-texto" id="fechaTexto"></div>
+
+    <div class="container">
+        <a href="gae.html" class="button">
+            <img src="gae.png" alt="Gae">
+        </a>
+        <a href="television.html" class="button">
+            <img src="television.png" alt="Television">
+        </a>
+        <a href="ofimatica.html" class="button">
+            <img src="ofimatica.png" alt="Ofimática">
+        </a>
+        <a href="pae.html" class="button">
+            <img src="pae.png" alt="Pae">
+        </a>
+    </div>
+
+    <!-- Script para cargar y mostrar la fecha -->
+    <script src="fechaactual.js"></script>
+    <script>
+        // Selecciona el elemento y coloca el contenido de la variable `fecha`
+        document.getElementById('fechaTexto').textContent = fecha;
+    </script>
+</body>
+</html>
