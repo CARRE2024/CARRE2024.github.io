@@ -12,35 +12,55 @@
         }
 
         body {
-            background: linear-gradient(to bottom, #0a47a9, #82cafa); /* Degradado con mayor contraste */
+            background: linear-gradient(to bottom, #0a47a9, #82cafa);
             font-family: Arial, sans-serif;
-            position: relative; /* Permite posicionar elementos absolutos */
+            position: relative;
         }
 
         .container {
             display: flex;
-            flex-direction: column; /* Cambia a columna para móviles */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh; /* Ocupa toda la altura de la ventana */
+            height: 100vh;
         }
 
         .button {
-            margin: 10px; /* Espaciado entre botones */
-            text-decoration: none; /* Sin subrayado en el enlace */
+            margin: 10px;
+            text-decoration: none;
         }
 
         .button img {
-            width: 100px; /* Ajusta el tamaño de las imágenes */
-            height: auto; /* Mantiene la proporción de las imágenes */
-            transition: transform 0.2s; /* Animación de hover */
+            width: 100px;
+            height: auto;
+            transition: transform 0.2s, opacity 0.5s ease-in-out;
+            opacity: 0;
         }
 
         .button:hover img {
-            transform: scale(1.1); /* Efecto de aumento al pasar el mouse */
+            transform: scale(1.1);
         }
 
-        /* Estilo para el texto de la fecha en la esquina superior derecha */
+        /* Animación de aparición */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Aplicamos la animación con retrasos escalonados */
+        .button:nth-child(1) img {
+            animation: fadeIn 0.5s ease-in-out 0.2s forwards;
+        }
+        .button:nth-child(2) img {
+            animation: fadeIn 0.5s ease-in-out 0.4s forwards;
+        }
+        .button:nth-child(3) img {
+            animation: fadeIn 0.5s ease-in-out 0.6s forwards;
+        }
+        .button:nth-child(4) img {
+            animation: fadeIn 0.5s ease-in-out 0.8s forwards;
+        }
+
         .fecha-texto {
             position: absolute;
             top: 10px;
@@ -49,7 +69,6 @@
             font-size: 14px;
         }
 
-        /* Estilo para el texto de la versión en la esquina superior izquierda */
         .version-texto {
             position: absolute;
             top: 10px;
@@ -60,16 +79,15 @@
 
         @media (min-width: 600px) {
             .container {
-                flex-direction: row; /* Cambia a fila en pantallas más grandes */
-                flex-wrap: wrap; /* Permite que los botones se envuelvan */
+                flex-direction: row;
+                flex-wrap: wrap;
             }
         }
 
-        /* Asegúrate de que cada botón ocupe el 50% del ancho en pantallas pequeñas */
         @media (max-width: 600px) {
             .button {
-                width: 50%; /* Cada botón ocupará el 50% del ancho */
-                display: flex; /* Para centrar la imagen dentro del botón */
+                width: 50%;
+                display: flex;
                 justify-content: center;
                 align-items: center;
             }
@@ -77,10 +95,7 @@
     </style>
 </head>
 <body>
-    <!-- Texto en la esquina superior izquierda -->
     <div class="version-texto">Versión 17 BETA</div>
-
-    <!-- Texto en la esquina superior derecha -->
     <div class="fecha-texto" id="fechaTexto"></div>
 
     <div class="container">
@@ -98,10 +113,8 @@
         </a>
     </div>
 
-    <!-- Script para cargar y mostrar la fecha -->
     <script src="fechaactual.js"></script>
     <script>
-        // Selecciona el elemento y coloca el contenido de la variable `fecha`
         document.getElementById('fechaTexto').textContent = fecha;
     </script>
 </body>
