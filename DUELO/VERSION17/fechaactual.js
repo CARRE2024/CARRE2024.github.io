@@ -1,1 +1,1 @@
-const fecha = "Actualizado a 28 de Mayo"; // Aquí puedes cambiar la fecha según sea necesario
+const fecha = "Actualizado a 2 de Junio"; // Aquí puedes cambiar la fecha según sea necesario
