@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Responsive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #0a47a9, #82cafa);
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .button {
+            margin: 10px;
+            text-decoration: none;
+        }
+
+        .button img {
+            width: 100px;
+            height: auto;
+            transition: transform 0.2s, opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .button:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Animación de aparición */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Aplicamos la animación con retrasos escalonados */
+        .button:nth-child(1) img {
+            animation: fadeIn 0.5s ease-in-out 0.2s forwards;
+        }
+        .button:nth-child(2) img {
+            animation: fadeIn 0.5s ease-in-out 0.4s forwards;
+        }
+        .button:nth-child(3) img {
+            animation: fadeIn 0.5s ease-in-out 0.6s forwards;
+        }
+        .button:nth-child(4) img {
+            animation: fadeIn 0.5s ease-in-out 0.8s forwards;
+        }
+
+        .fecha-texto {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .version-texto {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .button {
+                width: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="version-texto">Versión 17 BETA</div>
+    <div class="fecha-texto" id="fechaTexto"></div>
+
+    <div class="container">
+        <a href="gae.html" class="button">
+            <img src="gae.png" alt="Gae">
+        </a>
+        <a href="television.html" class="button">
+            <img src="television.png" alt="Television">
+        </a>
+        <a href="ofimatica.html" class="button">
+            <img src="ofimatica.png" alt="Ofimática">
+        </a>
+        <a href="pae.html" class="button">
+            <img src="pae.png" alt="Pae">
+        </a>
+    </div>
+
+    <script src="fechaactual.js"></script>
+    <script>
+        document.getElementById('fechaTexto').textContent = fecha;
+    </script>
+</body>
+</html>
