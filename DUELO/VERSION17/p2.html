@@ -12,6 +12,7 @@
 
         a {
             color: inherit;
+            /* O color: black; */
             text-decoration: none;
         }
 
@@ -28,6 +29,7 @@
             width: 100%;
             box-sizing: border-box;
             font-size: 32px;
+            /* Tamaño de fuente aumentado */
         }
 
         #searchButton,
@@ -190,18 +192,6 @@
             color: gold;
             margin-right: 5px;
         }
-
-        .modo-favoritos {
-            background-color: #e3f2fd !important;
-        }
-
-        .titulo-favoritos {
-            text-align: center;
-            font-weight: bold;
-            background-color: #e3f2fd;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="television.js"></script>
@@ -214,6 +204,8 @@
         <input type="text" id="search" oninput="ponerMayusculas()">
 
         <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <!--<button id="deleteStockZeroButton" onclick="eliminarStock0()">Eliminar Stock 0</button>-->
+        <!--<div class="toggle-container">-->
         <input type="checkbox" id="toggle" class="toggle">
         <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
         <input type="checkbox" id="toggle2" class="toggle2">
@@ -221,6 +213,7 @@
         <button id="microphoneButton" class="icon-button">
             <img src="microfono.png" alt="Micrófono">
         </button>
+        <!--</div>-->
     </div>
 
     <button id="favoritesButton" onclick="mostrarFavoritos()">Mostrar Favoritos</button>
@@ -252,9 +245,8 @@
     <input type="text" id="loqueescucha" size="50"><br>
     <input type="text" id="provisional" size="50"><br>
     <script>
-        let resultadosFiltrados = [];
+        let resultadosFiltrados = []; // Variable para almacenar resultados después de búsqueda
         let favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-        let enModoFavoritos = false;
 
         function ponerMayusculas() {
             const textoEscrito = document.getElementById('search');
@@ -291,6 +283,7 @@
                 }
             });
 
+            // Ordenar los resultados
             ordenarResultados();
             renderizarResultados();
             document.getElementById('toggle').checked = false;
@@ -301,9 +294,11 @@
                 const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
                 const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
 
+                // Primero, ordenar por porcentaje (descendente)
                 if (porcentajeA !== porcentageB) {
                     return porcentageB - porcentajeA;
                 } else {
+                    // Luego, ordenar por precio (descendente)
                     return (b.valorPrecio || 0) - (a.valorPrecio || 0);
                 }
             });
@@ -313,23 +308,8 @@
             const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
             cuerpoTabla.innerHTML = '';
 
-            if (enModoFavoritos && resultadosFiltrados.length > 0) {
-                const tituloFila = document.createElement('tr');
-                const tituloCelda = document.createElement('td');
-                tituloCelda.colSpan = 7;
-                tituloCelda.style.textAlign = 'center';
-                tituloCelda.style.fontWeight = 'bold';
-                tituloCelda.style.backgroundColor = '#e3f2fd';
-                tituloCelda.textContent = 'MODO FAVORITOS - Haz clic en un producto para eliminarlo';
-                tituloFila.appendChild(tituloCelda);
-                cuerpoTabla.appendChild(tituloFila);
-            }
-
             resultadosFiltrados.forEach(result => {
                 const fila = document.createElement('tr');
-                if (enModoFavoritos) {
-                    fila.classList.add('modo-favoritos');
-                }
 
                 const celdaStockAprox = document.createElement('td');
                 celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
@@ -341,6 +321,7 @@
                 linkProducto.target = '_blank';
                 linkProducto.textContent = result.sup;
 
+                // Copiar EAN al portapapeles antes de abrir el enlace
                 linkProducto.onclick = (event) => {
                     event.preventDefault();
                     navigator.clipboard.writeText(result.ean).then(() => {
@@ -415,57 +396,47 @@
             modal.style.display = 'none';
         }
 
+        // Funcionalidad de favoritos
         function agregarAFavoritos(producto) {
-            if (enModoFavoritos) {
-                if (confirm(`¿Eliminar "${producto.nombreProducto}" de favoritos?`)) {
-                    favoritos = favoritos.filter(fav => fav.ean !== producto.ean);
-                    localStorage.setItem('favoritos', JSON.stringify(favoritos));
-                    mostrarFavoritos();
-                }
+            // Verificar si ya está en favoritos
+            const index = favoritos.findIndex(fav => fav.ean === producto.ean);
+            
+            if (index === -1) {
+                // Si no está en favoritos, agregarlo
+                favoritos.push(producto);
+                localStorage.setItem('favoritos', JSON.stringify(favoritos));
+                alert(`${producto.nombreProducto} añadido a favoritos`);
             } else {
-                const yaExiste = favoritos.some(fav => fav.ean === producto.ean);
-                
-                if (!yaExiste) {
-                    favoritos.push(producto);
+                // Si ya está en favoritos, preguntar si quiere eliminarlo
+                if (confirm(`¿Quieres eliminar ${producto.nombreProducto} de favoritos?`)) {
+                    favoritos.splice(index, 1);
                     localStorage.setItem('favoritos', JSON.stringify(favoritos));
-                    alert(`${producto.nombreProducto} añadido a favoritos`);
-                } else {
-                    alert('Este producto ya está en favoritos');
+                    // Si estamos viendo la lista de favoritos, actualizarla
+                    if (document.getElementById('search').value === '') {
+                        mostrarFavoritos();
+                    }
                 }
             }
         }
 
         function mostrarFavoritos() {
             resultadosFiltrados = [...favoritos];
-            enModoFavoritos = true;
             renderizarResultados();
             document.getElementById('search').value = '';
-            document.getElementById('favoritesButton').textContent = 'Volver a Búsqueda';
-            document.getElementById('favoritesButton').onclick = volverABusqueda;
-        }
-
-        function volverABusqueda() {
-            enModoFavoritos = false;
-            filtrarTabla();
-            document.getElementById('favoritesButton').textContent = 'Mostrar Favoritos';
-            document.getElementById('favoritesButton').onclick = mostrarFavoritos;
         }
 
         function limpiarFavoritos() {
             if (confirm('¿Estás seguro de querer eliminar todos los favoritos?')) {
                 favoritos = [];
                 localStorage.removeItem('favoritos');
-                if (enModoFavoritos) {
-                    mostrarFavoritos();
-                } else {
-                    filtrarTabla();
-                }
+                filtrarTabla();
             }
         }
 
         const toggle = document.getElementById('toggle');
         const toggle2 = document.getElementById('toggle2');
 
+        // Evento para cambiar entre modos
         toggle.addEventListener('change', () => {
             if (toggle.checked) {
                 eliminarStock0();
