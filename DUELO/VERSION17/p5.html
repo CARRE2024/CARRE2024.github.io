@@ -187,13 +187,6 @@
             color: gold;
             margin-right: 5px;
         }
-
-        .barcode-placeholder {
-            width: 200px;
-            height: 80px;
-            background-color: #f5f5f5;
-            display: inline-block;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="television.js"></script>
@@ -245,8 +238,6 @@
         let dataPreprocessed = [];
         let resultadosFiltrados = [];
         let favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-        let currentPage = 1;
-        const resultsPerPage = 50;
 
         function preprocessData() {
             console.time('Preprocesamiento de datos');
@@ -285,18 +276,15 @@
             const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
 
             if (terminosBuscados.length === 0) {
-                resultadosFiltrados = [];
-                renderizarResultados();
-                return;
+                resultadosFiltrados = [...dataPreprocessed];
+            } else {
+                resultadosFiltrados = dataPreprocessed.filter(item => {
+                    const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+                    return terminosBuscados.every(term => nombreNormalizado.includes(term));
+                });
             }
 
-            resultadosFiltrados = dataPreprocessed.filter(item => {
-                const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-                return terminosBuscados.every(term => nombreNormalizado.includes(term));
-            });
-
             ordenarResultados();
-            currentPage = 1;
             renderizarResultados();
             console.timeEnd('Filtrado de tabla');
         }
@@ -315,21 +303,14 @@
             console.time('Renderizado de resultados');
             const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
             const fragment = document.createDocumentFragment();
-            
-            // Paginación: mostrar solo los resultados de la página actual
-            const startIndex = (currentPage - 1) * resultsPerPage;
-            const endIndex = startIndex + resultsPerPage;
-            const rowsToRender = resultadosFiltrados.slice(startIndex, endIndex);
 
-            rowsToRender.forEach(result => {
+            resultadosFiltrados.forEach(result => {
                 const fila = document.createElement('tr');
 
-                // Celda Stock
                 const celdaStockAprox = document.createElement('td');
                 celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
                 fila.appendChild(celdaStockAprox);
 
-                // Celda Sup
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
                 linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
@@ -346,7 +327,6 @@
                 celdaSup.appendChild(linkProducto);
                 fila.appendChild(celdaSup);
 
-                // Celda Nombre
                 const celdaNombreArticulo = document.createElement('td');
                 const nombreLink = document.createElement('a');
                 nombreLink.href = '#';
@@ -358,24 +338,28 @@
                 celdaNombreArticulo.appendChild(nombreLink);
                 fila.appendChild(celdaNombreArticulo);
 
-                // Celda Precio
                 const celdaPrecioAprox = document.createElement('td');
                 celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
                 fila.appendChild(celdaPrecioAprox);
 
-                // Celda Oferta
                 const celdaoferta = document.createElement('td');
                 celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
                 fila.appendChild(celdaoferta);
 
-                // Celda SMS
                 const celdaSms = document.createElement('td');
                 celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
                 fila.appendChild(celdaSms);
 
-                // Celda EAN (con lazy loading para el código de barras)
                 const celdaEan = document.createElement('td');
-                celdaEan.innerHTML = `<div class="barcode-placeholder" data-ean="${result.ean}"></div>`;
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
                 fila.appendChild(celdaEan);
 
                 fragment.appendChild(fila);
@@ -383,47 +367,16 @@
 
             cuerpoTabla.innerHTML = '';
             cuerpoTabla.appendChild(fragment);
-            
-            // Cargar códigos de barras para los elementos visibles
-            lazyLoadBarcodes();
             console.timeEnd('Renderizado de resultados');
-        }
-
-        function lazyLoadBarcodes() {
-            const placeholders = document.querySelectorAll('.barcode-placeholder:not(.loaded)');
-            
-            placeholders.forEach(placeholder => {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const ean = placeholder.getAttribute('data-ean');
-                            const img = document.createElement('img');
-                            img.className = 'barcode';
-                            JsBarcode(img, ean, {
-                                width: 4,
-                                height: 80
-                            });
-                            img.onclick = () => mostrarCodigoBarras(ean);
-                            placeholder.replaceWith(img);
-                            placeholder.classList.add('loaded');
-                            observer.unobserve(placeholder);
-                        }
-                    });
-                }, { threshold: 0.1 });
-
-                observer.observe(placeholder);
-            });
         }
 
         function eliminarStock0() {
             resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
-            currentPage = 1;
             renderizarResultados();
         }
 
         function eliminarStockMenor2() {
             resultadosFiltrados = resultadosFiltrados.filter(result => Number(result.stockAprox) > 1);
-            currentPage = 1;
             renderizarResultados();
         }
 
@@ -467,7 +420,6 @@
             
             if (favoritesButton.textContent === 'Mostrar Favoritos') {
                 resultadosFiltrados = [...favoritos];
-                currentPage = 1;
                 renderizarResultados();
                 searchInput.value = '';
                 favoritesButton.textContent = 'Volver atrás';
@@ -493,17 +445,19 @@
             }
         }
 
-        // Configuración de eventos
-        document.getElementById('toggle').addEventListener('change', () => {
-            if (document.getElementById('toggle').checked) {
+        const toggle = document.getElementById('toggle');
+        const toggle2 = document.getElementById('toggle2');
+
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
                 eliminarStock0();
             } else {
                 filtrarTabla();
             }
         });
 
-        document.getElementById('toggle2').addEventListener('change', () => {
-            if (document.getElementById('toggle2').checked) {
+        toggle2.addEventListener('change', () => {
+            if (toggle2.checked) {
                 eliminarStockMenor2();
             } else {
                 filtrarTabla();
@@ -521,7 +475,6 @@
                 const precioB = parseFloat(b.precioAprox.replace('€', '').replace(',', '.')) || 0;
                 return precioA - precioB;
             });
-            currentPage = 1;
             renderizarResultados();
         }
 
@@ -575,11 +528,13 @@
             return words;
         }
 
-        // Inicialización
         window.onload = () => {
             preprocessData();
             setupHeaderClick();
-            filtrarTabla();
+            // Mostrar todos los productos al cargar
+            resultadosFiltrados = [...dataPreprocessed];
+            ordenarResultados();
+            renderizarResultados();
         };
     </script>
 </body>
