@@ -235,9 +235,14 @@
     <input type="text" id="provisional" size="50"><br>
 
     <script>
+        // Variables globales optimizadas
         let dataPreprocessed = [];
         let resultadosFiltrados = [];
+        let resultadosCache = [];
         let favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+        let ultimaBusqueda = "";
+        let vistaNormal = true;
+        let resultadosOriginales = [];
 
         function preprocessData() {
             console.time('Preprocesamiento de datos');
@@ -256,6 +261,7 @@
                     porcentajeSup: columnas[10].endsWith('%') ? parseInt(columnas[10]) : 0
                 };
             });
+            resultadosOriginales = [...dataPreprocessed];
             console.timeEnd('Preprocesamiento de datos');
         }
 
@@ -273,15 +279,26 @@
             console.time('Filtrado de tabla');
             resetearToggles();
             const entrada = document.getElementById('search').value.toLowerCase();
+            ultimaBusqueda = document.getElementById('search').value;
             const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
 
             if (terminosBuscados.length === 0) {
                 resultadosFiltrados = [...dataPreprocessed];
+                resultadosCache = [...resultadosFiltrados];
             } else {
-                resultadosFiltrados = dataPreprocessed.filter(item => {
-                    const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-                    return terminosBuscados.every(term => nombreNormalizado.includes(term));
-                });
+                // Usar cache si es posible
+                if (resultadosCache.length > 0 && entrada.includes(ultimaBusqueda.toLowerCase())) {
+                    resultadosFiltrados = resultadosCache.filter(item => {
+                        const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+                        return terminosBuscados.every(term => nombreNormalizado.includes(term));
+                    });
+                } else {
+                    resultadosFiltrados = dataPreprocessed.filter(item => {
+                        const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+                        return terminosBuscados.every(term => nombreNormalizado.includes(term));
+                    });
+                    resultadosCache = [...resultadosFiltrados];
+                }
             }
 
             ordenarResultados();
@@ -302,31 +319,34 @@
         function renderizarResultados() {
             console.time('Renderizado de resultados');
             const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            
+            // Usar documentFragment para mejor rendimiento
             const fragment = document.createDocumentFragment();
 
             resultadosFiltrados.forEach(result => {
                 const fila = document.createElement('tr');
 
+                // Stock
                 const celdaStockAprox = document.createElement('td');
                 celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
                 fila.appendChild(celdaStockAprox);
 
+                // Sup
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
                 linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
                 linkProducto.target = '_blank';
                 linkProducto.textContent = result.sup;
-
                 linkProducto.onclick = (event) => {
                     event.preventDefault();
                     navigator.clipboard.writeText(result.ean).then(() => {
                         window.open(linkProducto.href, '_blank');
                     });
                 };
-
                 celdaSup.appendChild(linkProducto);
                 fila.appendChild(celdaSup);
 
+                // Nombre
                 const celdaNombreArticulo = document.createElement('td');
                 const nombreLink = document.createElement('a');
                 nombreLink.href = '#';
@@ -338,18 +358,22 @@
                 celdaNombreArticulo.appendChild(nombreLink);
                 fila.appendChild(celdaNombreArticulo);
 
+                // Precio
                 const celdaPrecioAprox = document.createElement('td');
                 celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
                 fila.appendChild(celdaPrecioAprox);
 
+                // Oferta
                 const celdaoferta = document.createElement('td');
                 celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
                 fila.appendChild(celdaoferta);
 
+                // SMS
                 const celdaSms = document.createElement('td');
                 celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
                 fila.appendChild(celdaSms);
 
+                // EAN
                 const celdaEan = document.createElement('td');
                 const imagenCodigoBarras = document.createElement('img');
                 imagenCodigoBarras.className = 'barcode';
@@ -357,7 +381,6 @@
                     width: 4,
                     height: 80
                 });
-
                 imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
                 celdaEan.appendChild(imagenCodigoBarras);
                 fila.appendChild(celdaEan);
@@ -368,6 +391,46 @@
             cuerpoTabla.innerHTML = '';
             cuerpoTabla.appendChild(fragment);
             console.timeEnd('Renderizado de resultados');
+        }
+
+        function toggleFavoritos() {
+            resetearToggles();
+            const favoritesButton = document.getElementById('favoritesButton');
+            const searchInput = document.getElementById('search');
+            
+            if (vistaNormal) {
+                // Guardar estado actual antes de mostrar favoritos
+                ultimaBusqueda = searchInput.value;
+                resultadosOriginales = [...resultadosFiltrados];
+                
+                // Mostrar favoritos
+                resultadosFiltrados = [...favoritos];
+                renderizarResultados();
+                searchInput.value = '';
+                favoritesButton.textContent = 'Volver atrás';
+                favoritesButton.style.backgroundColor = '#f44336';
+                vistaNormal = false;
+            } else {
+                // Volver a la vista normal
+                searchInput.value = ultimaBusqueda;
+                resultadosFiltrados = [...resultadosOriginales];
+                renderizarResultados();
+                favoritesButton.textContent = 'Mostrar Favoritos';
+                favoritesButton.style.backgroundColor = '#2196F3';
+                vistaNormal = true;
+            }
+        }
+
+        function limpiarFavoritos() {
+            if (confirm('¿Estás seguro de querer eliminar todos los favoritos?')) {
+                resetearToggles();
+                favoritos = [];
+                localStorage.removeItem('favoritos');
+                
+                if (!vistaNormal) {
+                    toggleFavoritos();
+                }
+            }
         }
 
         function eliminarStock0() {
@@ -406,63 +469,13 @@
                 if (confirm(`¿Quieres eliminar ${producto.nombreProducto} de favoritos?`)) {
                     favoritos.splice(index, 1);
                     localStorage.setItem('favoritos', JSON.stringify(favoritos));
-                    if (document.getElementById('favoritesButton').textContent === 'Volver atrás') {
-                        toggleFavoritos();
+                    if (!vistaNormal) {
+                        resultadosFiltrados = [...favoritos];
+                        renderizarResultados();
                     }
                 }
             }
         }
-
-        function toggleFavoritos() {
-            resetearToggles();
-            const favoritesButton = document.getElementById('favoritesButton');
-            const searchInput = document.getElementById('search');
-            
-            if (favoritesButton.textContent === 'Mostrar Favoritos') {
-                resultadosFiltrados = [...favoritos];
-                renderizarResultados();
-                searchInput.value = '';
-                favoritesButton.textContent = 'Volver atrás';
-                favoritesButton.style.backgroundColor = '#f44336';
-            } else {
-                filtrarTabla();
-                favoritesButton.textContent = 'Mostrar Favoritos';
-                favoritesButton.style.backgroundColor = '#2196F3';
-            }
-        }
-
-        function limpiarFavoritos() {
-            if (confirm('¿Estás seguro de querer eliminar todos los favoritos?')) {
-                resetearToggles();
-                favoritos = [];
-                localStorage.removeItem('favoritos');
-                
-                if (document.getElementById('favoritesButton').textContent === 'Volver atrás') {
-                    toggleFavoritos();
-                } else {
-                    filtrarTabla();
-                }
-            }
-        }
-
-        const toggle = document.getElementById('toggle');
-        const toggle2 = document.getElementById('toggle2');
-
-        toggle.addEventListener('change', () => {
-            if (toggle.checked) {
-                eliminarStock0();
-            } else {
-                filtrarTabla();
-            }
-        });
-
-        toggle2.addEventListener('change', () => {
-            if (toggle2.checked) {
-                eliminarStockMenor2();
-            } else {
-                filtrarTabla();
-            }
-        });
 
         function setupHeaderClick() {
             const precioAproxHeader = document.getElementById('precioAproxHeader');
@@ -477,6 +490,23 @@
             });
             renderizarResultados();
         }
+
+        // Event listeners
+        document.getElementById('toggle').addEventListener('change', () => {
+            if (document.getElementById('toggle').checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+            }
+        });
+
+        document.getElementById('toggle2').addEventListener('change', () => {
+            if (document.getElementById('toggle2').checked) {
+                eliminarStockMenor2();
+            } else {
+                filtrarTabla();
+            }
+        });
 
         document.getElementById("search").addEventListener("keypress", function (event) {
             if (event.key === "Enter") {
@@ -528,11 +558,13 @@
             return words;
         }
 
+        // Inicialización
         window.onload = () => {
             preprocessData();
             setupHeaderClick();
             // Mostrar todos los productos al cargar
             resultadosFiltrados = [...dataPreprocessed];
+            resultadosOriginales = [...resultadosFiltrados];
             ordenarResultados();
             renderizarResultados();
         };
