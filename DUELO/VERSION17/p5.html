@@ -5,143 +5,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #34495e;
-            --accent-color: #3498db;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --text-color: #333;
-            --text-light: #7f8c8d;
-            --border-color: #bdc3c7;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f5f7fa;
-            color: var(--text-color);
-            line-height: 1.6;
         }
 
         a {
-            color: var(--accent-color);
+            color: inherit;
             text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        a:hover {
-            color: var(--primary-color);
         }
 
         #searchContainer {
             display: flex;
             flex-direction: column;
             width: 100%;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
         }
 
         #search {
-            padding: 15px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
             width: 100%;
             box-sizing: border-box;
             font-size: 32px;
-            border-radius: 4px;
-            transition: border-color 0.3s ease;
-        }
-
-        #search:focus {
-            border-color: var(--accent-color);
-            outline: none;
         }
 
         #searchButton,
         #favoritesButton,
         #limpiarFavoritosButton {
-            padding: 12px;
+            padding: 10px;
             cursor: pointer;
+            background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             margin-bottom: 10px;
             width: 100%;
             box-sizing: border-box;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        #searchButton {
-            background-color: var(--primary-color);
-        }
-
-        #searchButton:hover {
-            background-color: var(--secondary-color);
         }
 
         #favoritesButton {
-            background-color: var(--accent-color);
-        }
-
-        #favoritesButton:hover {
-            background-color: #2980b9;
+            background-color: #2196F3;
         }
 
         #limpiarFavoritosButton {
-            background-color: var(--danger-color);
-        }
-
-        #limpiarFavoritosButton:hover {
-            background-color: #c0392b;
+            background-color: #f44336;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            border-radius: 8px;
-            overflow: hidden;
         }
 
         th, td {
-            border: 1px solid var(--border-color);
-            padding: 12px;
+            border: 1px solid #ddd;
+            padding: 8px;
             text-align: left;
         }
 
         th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 500;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
+            background-color: #f2f2f2;
         }
 
         tr:hover {
-            background-color: #e9f7fe;
+            background-color: #f5f5f5;
         }
 
         .barcode {
             height: 80px;
             cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .barcode:hover {
-            transform: scale(1.05);
         }
 
         .modal {
@@ -151,7 +84,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -162,15 +95,10 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
         }
 
         .modal img {
             height: 200px;
-            max-width: 90vw;
         }
 
         .toggle {
@@ -180,14 +108,11 @@
         .toggle-label {
             width: 60px;
             height: 30px;
-            background-color: #95a5a6;
+            background-color: gray;
             border-radius: 15px;
             cursor: pointer;
             position: relative;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
+            transition: background-color 0.3s;
         }
 
         .toggle-label::before {
@@ -199,14 +124,14 @@
             position: absolute;
             top: 2px;
             left: 2px;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s;
         }
 
-        .toggle:checked + .toggle-label {
-            background-color: var(--success-color);
+        .toggle:checked+.toggle-label {
+            background-color: #4caf50;
         }
 
-        .toggle:checked + .toggle-label::before {
+        .toggle:checked+.toggle-label::before {
             transform: translateX(30px);
         }
 
@@ -217,14 +142,11 @@
         .toggle-label2 {
             width: 60px;
             height: 30px;
-            background-color: #95a5a6;
+            background-color: gray;
             border-radius: 15px;
             cursor: pointer;
             position: relative;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
+            transition: background-color 0.3s;
         }
 
         .toggle-label2::before {
@@ -236,21 +158,15 @@
             position: absolute;
             top: 2px;
             left: 2px;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s;
         }
 
-        .toggle2:checked + .toggle-label2 {
-            background-color: var(--success-color);
+        .toggle2:checked+.toggle-label2 {
+            background-color: #4caf50;
         }
 
-        .toggle2:checked + .toggle-label2::before {
+        .toggle2:checked+.toggle-label2::before {
             transform: translateX(30px);
-        }
-
-        .toggle-container {
-            margin: 15px 0;
-            color: var(--text-color);
-            font-weight: 500;
         }
 
         .icon-button {
@@ -260,11 +176,6 @@
             padding: 0;
             margin-left: 10px;
             vertical-align: middle;
-            transition: transform 0.3s ease;
-        }
-
-        .icon-button:hover {
-            transform: scale(1.1);
         }
 
         .icon-button img {
@@ -273,30 +184,15 @@
         }
 
         .favorite-star {
-            color: var(--warning-color);
+            color: gold;
             margin-right: 5px;
-            font-size: 18px;
         }
 
-        #loqueescucha, #provisional {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        @media (max-width: 768px) {
-            #search {
-                font-size: 24px;
-                padding: 12px;
-            }
-            
-            th, td {
-                padding: 8px;
-                font-size: 14px;
-            }
+        .barcode-placeholder {
+            width: 200px;
+            height: 80px;
+            background-color: #f5f5f5;
+            display: inline-block;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
@@ -306,19 +202,12 @@
 
 <body>
     <div id="searchContainer">
-        <input type="text" id="search" oninput="ponerMayusculas()" placeholder="Buscar productos...">
-        <button id="searchButton" onclick="filtrarTabla()">Buscar (separar términos por comas)</button>
-        
-        <div class="toggle-container">
-            <input type="checkbox" id="toggle" class="toggle">
-            <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
-        </div>
-        
-        <div class="toggle-container">
-            <input type="checkbox" id="toggle2" class="toggle2">
-            <label for="toggle2" class="toggle-label2"></label>AL MENOS 2 UNIDADES
-        </div>
-        
+        <input type="text" id="search" oninput="ponerMayusculas()">
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <input type="checkbox" id="toggle2" class="toggle2">
+        <label for="toggle2" class="toggle-label2"></label>AL MENOS 2 UNIDADES
         <button id="microphoneButton" class="icon-button">
             <img src="microfono.png" alt="Micrófono">
         </button>
@@ -349,13 +238,35 @@
             <img id="modalBarcodeImage" alt="Código de barras">
         </div>
     </div>
-    
-    <input type="text" id="loqueescucha" size="50" placeholder="Lo que escucha el micrófono..."><br>
-    <input type="text" id="provisional" size="50" placeholder="Texto provisional..."><br>
+    <input type="text" id="loqueescucha" size="50"><br>
+    <input type="text" id="provisional" size="50"><br>
 
     <script>
+        let dataPreprocessed = [];
         let resultadosFiltrados = [];
         let favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+        let currentPage = 1;
+        const resultsPerPage = 50;
+
+        function preprocessData() {
+            console.time('Preprocesamiento de datos');
+            const filas = data.trim().split('\n');
+            dataPreprocessed = filas.map(row => {
+                const columnas = row.split(';');
+                return {
+                    nombreProducto: columnas[5].trim(),
+                    sms: columnas[6].trim(),
+                    ean: columnas[7].trim(),
+                    sup: columnas[10].trim(),
+                    precioAprox: columnas[11].trim(),
+                    oferta: columnas[13].trim(),
+                    stockAprox: columnas[12].trim(),
+                    valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null,
+                    porcentajeSup: columnas[10].endsWith('%') ? parseInt(columnas[10]) : 0
+                };
+            });
+            console.timeEnd('Preprocesamiento de datos');
+        }
 
         function resetearToggles() {
             document.getElementById('toggle').checked = false;
@@ -368,47 +279,32 @@
         }
 
         function filtrarTabla() {
+            console.time('Filtrado de tabla');
             resetearToggles();
             const entrada = document.getElementById('search').value.toLowerCase();
-            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
-            cuerpoTabla.innerHTML = '';
-
-            const filas = data.trim().split('\n');
             const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
 
-            resultadosFiltrados = [];
+            if (terminosBuscados.length === 0) {
+                resultadosFiltrados = [];
+                renderizarResultados();
+                return;
+            }
 
-            filas.forEach(row => {
-                const columnas = row.split(';');
-                const nombreProducto = columnas[5].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-
-                const contieneTodosTerminos = terminosBuscados.every(term => nombreProducto.includes(term));
-
-                if (contieneTodosTerminos) {
-                    resultadosFiltrados.push({
-                        nombreProducto: columnas[5].trim(),
-                        sms: columnas[6].trim(),
-                        ean: columnas[7].trim(),
-                        sup: columnas[10].trim(),
-                        precioAprox: columnas[11].trim(),
-                        oferta: columnas[13].trim(),
-                        stockAprox: columnas[12].trim(),
-                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
-                    });
-                }
+            resultadosFiltrados = dataPreprocessed.filter(item => {
+                const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+                return terminosBuscados.every(term => nombreNormalizado.includes(term));
             });
 
             ordenarResultados();
+            currentPage = 1;
             renderizarResultados();
+            console.timeEnd('Filtrado de tabla');
         }
 
         function ordenarResultados() {
             resultadosFiltrados.sort((a, b) => {
-                const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
-                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
-
-                if (porcentajeA !== porcentageB) {
-                    return porcentageB - porcentajeA;
+                if (a.porcentajeSup !== b.porcentajeSup) {
+                    return b.porcentajeSup - a.porcentajeSup;
                 } else {
                     return (b.valorPrecio || 0) - (a.valorPrecio || 0);
                 }
@@ -416,16 +312,24 @@
         }
 
         function renderizarResultados() {
+            console.time('Renderizado de resultados');
             const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
-            cuerpoTabla.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            
+            // Paginación: mostrar solo los resultados de la página actual
+            const startIndex = (currentPage - 1) * resultsPerPage;
+            const endIndex = startIndex + resultsPerPage;
+            const rowsToRender = resultadosFiltrados.slice(startIndex, endIndex);
 
-            resultadosFiltrados.forEach(result => {
+            rowsToRender.forEach(result => {
                 const fila = document.createElement('tr');
 
+                // Celda Stock
                 const celdaStockAprox = document.createElement('td');
                 celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
                 fila.appendChild(celdaStockAprox);
 
+                // Celda Sup
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
                 linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
@@ -442,6 +346,7 @@
                 celdaSup.appendChild(linkProducto);
                 fila.appendChild(celdaSup);
 
+                // Celda Nombre
                 const celdaNombreArticulo = document.createElement('td');
                 const nombreLink = document.createElement('a');
                 nombreLink.href = '#';
@@ -453,41 +358,72 @@
                 celdaNombreArticulo.appendChild(nombreLink);
                 fila.appendChild(celdaNombreArticulo);
 
+                // Celda Precio
                 const celdaPrecioAprox = document.createElement('td');
                 celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
                 fila.appendChild(celdaPrecioAprox);
 
+                // Celda Oferta
                 const celdaoferta = document.createElement('td');
                 celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
                 fila.appendChild(celdaoferta);
 
+                // Celda SMS
                 const celdaSms = document.createElement('td');
                 celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
                 fila.appendChild(celdaSms);
 
+                // Celda EAN (con lazy loading para el código de barras)
                 const celdaEan = document.createElement('td');
-                const imagenCodigoBarras = document.createElement('img');
-                imagenCodigoBarras.className = 'barcode';
-                JsBarcode(imagenCodigoBarras, result.ean, {
-                    width: 4,
-                    height: 80
-                });
-
-                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
-                celdaEan.appendChild(imagenCodigoBarras);
+                celdaEan.innerHTML = `<div class="barcode-placeholder" data-ean="${result.ean}"></div>`;
                 fila.appendChild(celdaEan);
 
-                cuerpoTabla.appendChild(fila);
+                fragment.appendChild(fila);
+            });
+
+            cuerpoTabla.innerHTML = '';
+            cuerpoTabla.appendChild(fragment);
+            
+            // Cargar códigos de barras para los elementos visibles
+            lazyLoadBarcodes();
+            console.timeEnd('Renderizado de resultados');
+        }
+
+        function lazyLoadBarcodes() {
+            const placeholders = document.querySelectorAll('.barcode-placeholder:not(.loaded)');
+            
+            placeholders.forEach(placeholder => {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const ean = placeholder.getAttribute('data-ean');
+                            const img = document.createElement('img');
+                            img.className = 'barcode';
+                            JsBarcode(img, ean, {
+                                width: 4,
+                                height: 80
+                            });
+                            img.onclick = () => mostrarCodigoBarras(ean);
+                            placeholder.replaceWith(img);
+                            placeholder.classList.add('loaded');
+                            observer.unobserve(placeholder);
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                observer.observe(placeholder);
             });
         }
 
         function eliminarStock0() {
             resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            currentPage = 1;
             renderizarResultados();
         }
 
         function eliminarStockMenor2() {
             resultadosFiltrados = resultadosFiltrados.filter(result => Number(result.stockAprox) > 1);
+            currentPage = 1;
             renderizarResultados();
         }
 
@@ -531,6 +467,7 @@
             
             if (favoritesButton.textContent === 'Mostrar Favoritos') {
                 resultadosFiltrados = [...favoritos];
+                currentPage = 1;
                 renderizarResultados();
                 searchInput.value = '';
                 favoritesButton.textContent = 'Volver atrás';
@@ -556,19 +493,17 @@
             }
         }
 
-        const toggle = document.getElementById('toggle');
-        const toggle2 = document.getElementById('toggle2');
-
-        toggle.addEventListener('change', () => {
-            if (toggle.checked) {
+        // Configuración de eventos
+        document.getElementById('toggle').addEventListener('change', () => {
+            if (document.getElementById('toggle').checked) {
                 eliminarStock0();
             } else {
                 filtrarTabla();
             }
         });
 
-        toggle2.addEventListener('change', () => {
-            if (toggle2.checked) {
+        document.getElementById('toggle2').addEventListener('change', () => {
+            if (document.getElementById('toggle2').checked) {
                 eliminarStockMenor2();
             } else {
                 filtrarTabla();
@@ -586,6 +521,7 @@
                 const precioB = parseFloat(b.precioAprox.replace('€', '').replace(',', '.')) || 0;
                 return precioA - precioB;
             });
+            currentPage = 1;
             renderizarResultados();
         }
 
@@ -596,11 +532,7 @@
             }
         });
 
-        window.onload = () => {
-            setupHeaderClick();
-            filtrarTabla();
-        };
-
+        // Reconocimiento de voz
         const button = document.getElementById('microphoneButton');
         const loqueescuchaInput = document.getElementById('loqueescucha');
         const provisionalInput = document.getElementById('provisional');
@@ -642,6 +574,13 @@
             const words = removeAccents(speech).toUpperCase();
             return words;
         }
+
+        // Inicialización
+        window.onload = () => {
+            preprocessData();
+            setupHeaderClick();
+            filtrarTabla();
+        };
     </script>
 </body>
 </html>
