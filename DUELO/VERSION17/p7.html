@@ -3,13 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 8px;
-            -webkit-text-size-adjust: 100%;
-            touch-action: manipulation;
+            margin: 20px;
         }
 
         a {
@@ -24,12 +22,12 @@
         }
 
         #search {
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ddd;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             width: 100%;
             box-sizing: border-box;
-            font-size: 18px;
+            font-size: 32px;
         }
 
         #searchButton,
@@ -41,10 +39,9 @@
             color: white;
             border: none;
             border-radius: 5px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             width: 100%;
             box-sizing: border-box;
-            font-size: 16px;
         }
 
         #favoritesButton {
@@ -55,32 +52,20 @@
             background-color: #f44336;
         }
 
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 600px; /* Ancho mínimo para mantener estructura */
+            margin-top: 20px;
         }
 
         th, td {
             border: 1px solid #ddd;
-            padding: 6px;
+            padding: 8px;
             text-align: left;
-            font-size: 14px;
-            word-break: break-word;
         }
 
         th {
             background-color: #f2f2f2;
-            position: sticky;
-            top: 0;
         }
 
         tr:hover {
@@ -88,9 +73,8 @@
         }
 
         .barcode {
-            height: 40px;
+            height: 80px;
             cursor: pointer;
-            display: none; /* Oculto por defecto */
         }
 
         .modal {
@@ -114,14 +98,7 @@
         }
 
         .modal img {
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
+            height: 200px;
         }
 
         .toggle {
@@ -129,20 +106,19 @@
         }
 
         .toggle-label {
-            width: 50px;
-            height: 26px;
-            background-color: #ccc;
-            border-radius: 13px;
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
             cursor: pointer;
             position: relative;
             transition: background-color 0.3s;
-            margin-right: 8px;
         }
 
         .toggle-label::before {
             content: '';
-            width: 22px;
-            height: 22px;
+            width: 26px;
+            height: 26px;
             background-color: white;
             border-radius: 50%;
             position: absolute;
@@ -151,19 +127,46 @@
             transition: transform 0.3s;
         }
 
-        .toggle:checked + .toggle-label {
-            background-color: #4CAF50;
+        .toggle:checked+.toggle-label {
+            background-color: #4caf50;
         }
 
-        .toggle:checked + .toggle-label::before {
-            transform: translateX(24px);
+        .toggle:checked+.toggle-label::before {
+            transform: translateX(30px);
         }
 
-        .toggle-text {
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .toggle2 {
+            display: none;
+        }
+
+        .toggle-label2 {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label2::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle2:checked+.toggle-label2 {
+            background-color: #4caf50;
+        }
+
+        .toggle2:checked+.toggle-label2::before {
+            transform: translateX(30px);
         }
 
         .icon-button {
@@ -171,40 +174,18 @@
             border: none;
             cursor: pointer;
             padding: 0;
-            margin-left: 8px;
+            margin-left: 10px;
+            vertical-align: middle;
         }
 
         .icon-button img {
-            width: 50px;
+            width: 60px;
             height: 30px;
         }
 
         .favorite-star {
             color: gold;
-            margin-right: 4px;
-        }
-
-        /* Estilos para móviles pequeños */
-        @media (max-width: 400px) {
-            #search {
-                font-size: 16px;
-                padding: 6px;
-            }
-            
-            th, td {
-                padding: 4px;
-                font-size: 12px;
-            }
-            
-            .toggle-label {
-                width: 45px;
-                height: 24px;
-            }
-            
-            .toggle-label::before {
-                width: 20px;
-                height: 20px;
-            }
+            margin-right: 5px;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
@@ -214,21 +195,12 @@
 
 <body>
     <div id="searchContainer">
-        <input type="text" id="search" oninput="ponerMayusculas()" placeholder="Buscar...">
-        <button id="searchButton" onclick="filtrarTabla()">Buscar (separar por comas)</button>
-        
-        <div class="toggle-container">
-            <input type="checkbox" id="toggle" class="toggle">
-            <label for="toggle" class="toggle-label"></label>
-            <span class="toggle-text">ELIMINAR STOCK 0 EN TIENDA</span>
-        </div>
-        
-        <div class="toggle-container">
-            <input type="checkbox" id="toggle2" class="toggle2">
-            <label for="toggle2" class="toggle-label2"></label>
-            <span class="toggle-text">AL MENOS 2 UNIDADES</span>
-        </div>
-        
+        <input type="text" id="search" oninput="ponerMayusculas()">
+        <button id="searchButton" onclick="filtrarTabla()">Buscar (comas=AND, puntos=OR)</button>
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <input type="checkbox" id="toggle2" class="toggle2">
+        <label for="toggle2" class="toggle-label2"></label>AL MENOS 2 UNIDADES
         <button id="microphoneButton" class="icon-button">
             <img src="microfono.png" alt="Micrófono">
         </button>
@@ -237,33 +209,30 @@
     <button id="favoritesButton" onclick="toggleFavoritos()">Mostrar Favoritos</button>
     <button id="limpiarFavoritosButton" onclick="limpiarFavoritos()">Limpiar Favoritos</button>
 
-    <div class="table-container">
-        <table id="productTable">
-            <thead>
-                <tr>
-                    <th style="width: 50px;">Stock</th>
-                    <th style="width: 60px;">Sup</th>
-                    <th>Nombre</th>
-                    <th style="width: 70px;">Precio</th>
-                    <th style="width: 70px;">Oferta</th>
-                    <th style="width: 50px;">SMS</th>
-                    <th style="width: 80px;">EAN</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Aquí se insertarán los datos -->
-            </tbody>
-        </table>
-    </div>
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>Stock</th>
+                <th>Sup</th>
+                <th>Nombre del producto</th>
+                <th id="precioAproxHeader">Precio aprox</th>
+                <th>Oferta</th>
+                <th>SMS</th>
+                <th>EAN</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se insertarán los datos -->
+        </tbody>
+    </table>
 
     <div id="barcodeModal" class="modal" onclick="cerrarModal()">
         <div class="modal-content">
             <img id="modalBarcodeImage" alt="Código de barras">
         </div>
     </div>
-    
-    <input type="text" id="loqueescucha" style="display: none;">
-    <input type="text" id="provisional" style="display: none;">
+    <input type="text" id="loqueescucha" size="50"><br>
+    <input type="text" id="provisional" size="50"><br>
 
     <script>
         // Variables globales
@@ -309,17 +278,31 @@
             resetearToggles();
             const entrada = document.getElementById('search').value.toLowerCase();
             ultimaBusqueda = document.getElementById('search').value;
-            const terminosBuscados = entrada.split(',').map(term => term.trim()).filter(term => term);
-
+            
+            // Dividir por comas primero, luego por puntos dentro de cada grupo
+            const grupos = entrada.split(',').map(term => term.trim()).filter(term => term);
+            
             // Determinar sobre qué conjunto de datos buscar
             const datosABuscar = vistaNormal ? dataPreprocessed : favoritos;
 
-            if (terminosBuscados.length === 0) {
+            if (grupos.length === 0) {
                 resultadosFiltrados = [...datosABuscar];
             } else {
                 resultadosFiltrados = datosABuscar.filter(item => {
                     const nombreNormalizado = item.nombreProducto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-                    return terminosBuscados.every(term => nombreNormalizado.includes(term));
+                    
+                    // Para cada grupo, verificar si alguno de los términos (separados por puntos) coincide
+                    return grupos.every(grupo => {
+                        const terminos = grupo.split('.').map(t => t.trim()).filter(t => t);
+                        // Si no hay puntos, funciona como AND (todos deben coincidir)
+                        if (grupo.indexOf('.') === -1) {
+                            return terminos.every(term => nombreNormalizado.includes(term));
+                        } 
+                        // Si hay puntos, funciona como OR (al menos uno debe coincidir)
+                        else {
+                            return terminos.some(term => nombreNormalizado.includes(term));
+                        }
+                    });
                 });
             }
 
@@ -346,28 +329,27 @@
             resultadosFiltrados.forEach(result => {
                 const fila = document.createElement('tr');
 
-                // Stock
-                const celdaStock = document.createElement('td');
-                celdaStock.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
-                fila.appendChild(celdaStock);
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
+                fila.appendChild(celdaStockAprox);
 
-                // Sup
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
                 linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
                 linkProducto.target = '_blank';
                 linkProducto.textContent = result.sup;
+
                 linkProducto.onclick = (event) => {
                     event.preventDefault();
                     navigator.clipboard.writeText(result.ean).then(() => {
                         window.open(linkProducto.href, '_blank');
                     });
                 };
+
                 celdaSup.appendChild(linkProducto);
                 fila.appendChild(celdaSup);
 
-                // Nombre
-                const celdaNombre = document.createElement('td');
+                const celdaNombreArticulo = document.createElement('td');
                 const nombreLink = document.createElement('a');
                 nombreLink.href = '#';
                 nombreLink.innerHTML = `<span class="favorite-star">★</span>${result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto}`;
@@ -375,31 +357,31 @@
                     e.preventDefault();
                     agregarAFavoritos(result);
                 };
-                celdaNombre.appendChild(nombreLink);
-                fila.appendChild(celdaNombre);
+                celdaNombreArticulo.appendChild(nombreLink);
+                fila.appendChild(celdaNombreArticulo);
 
-                // Precio
-                const celdaPrecio = document.createElement('td');
-                celdaPrecio.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
-                fila.appendChild(celdaPrecio);
+                const celdaPrecioAprox = document.createElement('td');
+                celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
+                fila.appendChild(celdaPrecioAprox);
 
-                // Oferta
-                const celdaOferta = document.createElement('td');
-                celdaOferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
-                fila.appendChild(celdaOferta);
+                const celdaoferta = document.createElement('td');
+                celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
+                fila.appendChild(celdaoferta);
 
-                // SMS
                 const celdaSms = document.createElement('td');
                 celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
                 fila.appendChild(celdaSms);
 
-                // EAN (oculto por defecto)
                 const celdaEan = document.createElement('td');
-                const imgBarcode = document.createElement('img');
-                imgBarcode.className = 'barcode';
-                JsBarcode(imgBarcode, result.ean, { width: 2, height: 40 });
-                imgBarcode.onclick = () => mostrarCodigoBarras(result.ean);
-                celdaEan.appendChild(imgBarcode);
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
                 fila.appendChild(celdaEan);
 
                 fragment.appendChild(fila);
@@ -463,7 +445,10 @@
         function mostrarCodigoBarras(reference) {
             const modal = document.getElementById('barcodeModal');
             const modalBarcodeImage = document.getElementById('modalBarcodeImage');
-            JsBarcode(modalBarcodeImage, reference, { width: 2, height: 100 });
+            JsBarcode(modalBarcodeImage, reference, {
+                width: 4,
+                height: 200
+            });
             modal.style.display = 'flex';
         }
 
@@ -480,6 +465,7 @@
                 localStorage.setItem('favoritos', JSON.stringify(favoritos));
                 alert(`${producto.nombreProducto} añadido a favoritos`);
                 
+                // Si estamos en vista de favoritos, actualizar la lista
                 if (!vistaNormal) {
                     resultadosFiltrados = [...favoritos];
                     renderizarResultados();
@@ -489,6 +475,7 @@
                     favoritos.splice(index, 1);
                     localStorage.setItem('favoritos', JSON.stringify(favoritos));
                     
+                    // Si estamos en vista de favoritos, actualizar la lista
                     if (!vistaNormal) {
                         resultadosFiltrados = [...favoritos];
                         renderizarResultados();
@@ -528,7 +515,7 @@
             }
         });
 
-        document.getElementById("search").addEventListener("keypress", function(event) {
+        document.getElementById("search").addEventListener("keypress", function (event) {
             if (event.key === "Enter") {
                 event.preventDefault();
                 document.getElementById("searchButton").click();
@@ -537,7 +524,11 @@
 
         // Reconocimiento de voz
         const button = document.getElementById('microphoneButton');
+        const loqueescuchaInput = document.getElementById('loqueescucha');
+        const provisionalInput = document.getElementById('provisional');
+        const searchInput = document.getElementById('search');
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
         recognition.continuous = false;
         recognition.lang = 'es-ES';
 
@@ -547,30 +538,38 @@
 
         recognition.onresult = (event) => {
             const result = event.results[0][0].transcript;
+            loqueescuchaInput.value = result;
             const formattedResult = formatSpeech(result);
-            document.getElementById('search').value = formattedResult;
-            filtrarTabla();
-        };
+            provisionalInput.value = formattedResult;
 
-        function formatSpeech(speech) {
-            const removeAccents = (text) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            let searchText = removeAccents(speech).toUpperCase();
+            let searchText = formattedResult;
 
             for (const [key, value] of Object.entries(palabrasclave)) {
                 const regex = new RegExp(`\\b${key}\\b`, 'gi');
                 searchText = searchText.replace(regex, value);
             }
 
-            return searchText.split(' ')
+            const parts = searchText.split(' ')
                 .map(part => part.trim())
-                .filter(part => Object.values(palabrasclave).includes(part))
-                .join(',');
+                .filter(part => Object.values(palabrasclave).includes(part));
+
+            searchInput.value = parts.join(',');
+        };
+
+        function formatSpeech(speech) {
+            const removeAccents = (text) => {
+                return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            };
+
+            const words = removeAccents(speech).toUpperCase();
+            return words;
         }
 
         // Inicialización
         window.onload = () => {
             preprocessData();
             setupHeaderClick();
+            // Mostrar todos los productos al cargar
             resultadosFiltrados = [...dataPreprocessed];
             resultadosOriginales = [...resultadosFiltrados];
             ordenarResultados();
