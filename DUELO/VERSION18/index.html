@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Responsive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #2d2d2d 100%);
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            position: relative;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .button {
+            margin: 15px;
+            text-decoration: none;
+            filter: brightness(0) invert(1); /* Convierte los iconos a blanco */
+            transition: all 0.3s ease;
+        }
+
+        .button img {
+            width: 100px;
+            height: auto;
+            transition: transform 0.2s, opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .button:hover {
+            filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
+        }
+
+        .button:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Animación de aparición */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Aplicamos la animación con retrasos escalonados */
+        .button:nth-child(1) img {
+            animation: fadeIn 0.5s ease-in-out 0.2s forwards;
+        }
+        .button:nth-child(2) img {
+            animation: fadeIn 0.5s ease-in-out 0.4s forwards;
+        }
+        .button:nth-child(3) img {
+            animation: fadeIn 0.5s ease-in-out 0.6s forwards;
+        }
+        .button:nth-child(4) img {
+            animation: fadeIn 0.5s ease-in-out 0.8s forwards;
+        }
+
+        .fecha-texto, .version-texto {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .fecha-texto {
+            top: 15px;
+            right: 20px;
+        }
+
+        .version-texto {
+            top: 15px;
+            left: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .button {
+                width: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="version-texto">Versión 18 BETA</div>
+    <div class="fecha-texto" id="fechaTexto"></div>
+
+    <div class="container">
+        <a href="gae.html" class="button">
+            <img src="gae.png" alt="Gae">
+        </a>
+        <a href="television.html" class="button">
+            <img src="television.png" alt="Television">
+        </a>
+        <a href="ofimatica.html" class="button">
+            <img src="ofimatica.png" alt="Ofimática">
+        </a>
+        <a href="pae.html" class="button">
+            <img src="pae.png" alt="Pae">
+        </a>
+    </div>
+
+    <script src="fechaactual.js"></script>
+    <script>
+        document.getElementById('fechaTexto').textContent = fecha;
+    </script>
+</body>
+</html>
