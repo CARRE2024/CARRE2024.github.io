@@ -45,7 +45,7 @@
         }
 
         #favoritesButton {
-            background-color: #2196F3;
+            background-color: #4CAF50; 
         }
 
         #limpiarFavoritosButton {
@@ -186,11 +186,6 @@
         .favorite-star {
             color: gold;
             margin-right: 5px;
-            display: none;
-        }
-
-        .favorite-view .favorite-star {
-            display: inline;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
@@ -201,7 +196,7 @@
 <body>
     <div id="searchContainer">
         <input type="text" id="search" oninput="ponerMayusculas()">
-        <button id="searchButton" onclick="filtrarTabla()">Buscar (comas=AND, puntos=OR)</button>
+        <button id="searchButton" onclick="filtrarTabla()">Buscar</button>
         <input type="checkbox" id="toggle" class="toggle">
         <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
         <input type="checkbox" id="toggle2" class="toggle2">
@@ -331,13 +326,6 @@
             const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
             const fragment = document.createDocumentFragment();
 
-            // Añadir o quitar clase al body según la vista
-            if (vistaNormal) {
-                document.body.classList.remove('favorite-view');
-            } else {
-                document.body.classList.add('favorite-view');
-            }
-
             resultadosFiltrados.forEach(result => {
                 const fila = document.createElement('tr');
 
@@ -364,7 +352,7 @@
                 const celdaNombreArticulo = document.createElement('td');
                 const nombreLink = document.createElement('a');
                 nombreLink.href = '#';
-                nombreLink.innerHTML = `<span class="favorite-star">★</span>${result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto}`;
+                nombreLink.innerHTML = `<span class="favorite-star"></span>${result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto}`;
                 nombreLink.onclick = (e) => {
                     e.preventDefault();
                     agregarAFavoritos(result);
