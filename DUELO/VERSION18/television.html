@@ -45,7 +45,7 @@
             box-sizing: border-box;
         }
 
-        #showFavoritesButton.active, 
+        #showFavoritesButton.active,
         #clearFavoritesButton {
             background-color: #f44336;
         }
@@ -199,7 +199,7 @@
         <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
         <button id="showFavoritesButton" onclick="toggleFavorites()">Mostrar favoritos</button>
         <button id="clearFavoritesButton" onclick="clearFavorites()">Limpiar favoritos</button>
-        
+
         <input type="checkbox" id="toggle" class="toggle">
         <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
         <input type="checkbox" id="toggle2" class="toggle2">
@@ -249,11 +249,23 @@
             const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
             cuerpoTabla.innerHTML = '';
 
-            const filas = data.trim().split('\n');
-            
+            let filas;
+
+            if (isShowingFavorites) {
+                // Si estamos en vista de favoritos, trabajamos solo con los favoritos
+                filas = data.trim().split('\n').filter(row => {
+                    const columnas = row.split(';');
+                    const ean = columnas[7].trim();
+                    return favoritestelevision.includes(ean);
+                });
+            } else {
+                // Si no, trabajamos con todos los productos
+                filas = data.trim().split('\n');
+            }
+
             // Primero separamos por comas para obtener los grupos AND
             const gruposAND = entrada.split(',').map(grupo => grupo.trim()).filter(grupo => grupo);
-            
+
             resultadosFiltrados = [];
 
             filas.forEach(row => {
@@ -262,13 +274,13 @@
 
                 // Para cada grupo AND, verificamos si cumple con al menos uno de los términos OR (separados por punto)
                 let cumpleTodosLosGrupos = true;
-                
+
                 for (const grupo of gruposAND) {
                     if (grupo.includes('.')) {
                         // Este grupo tiene términos OR (separados por punto)
                         const terminosOR = grupo.split('.').map(term => term.trim()).filter(term => term);
                         const cumpleOR = terminosOR.some(term => nombreProducto.includes(term));
-                        
+
                         if (!cumpleOR) {
                             cumpleTodosLosGrupos = false;
                             break;
@@ -408,11 +420,13 @@
             isShowingFavorites = !isShowingFavorites;
             const favoritesButton = document.getElementById('showFavoritesButton');
             const clearButton = document.getElementById('clearFavoritesButton');
-            
+
             if (isShowingFavorites) {
                 favoritesButton.textContent = 'Volver atrás';
                 favoritesButton.classList.add('active');
                 clearButton.style.display = 'block';
+                document.getElementById('toggle').checked = false;
+                document.getElementById('toggle2').checked = false;
                 showFavorites();
             } else {
                 favoritesButton.textContent = 'Mostrar favoritos';
@@ -428,14 +442,14 @@
                 toggleFavorites();
                 return;
             }
-            
+
             const filas = data.trim().split('\n');
             const favoritosFiltrados = [];
-            
+
             filas.forEach(row => {
                 const columnas = row.split(';');
                 const ean = columnas[7].trim();
-                
+
                 if (favoritestelevision.includes(ean)) {
                     favoritosFiltrados.push({
                         nombreProducto: columnas[5].trim(),
@@ -449,7 +463,7 @@
                     });
                 }
             });
-            
+
             resultadosFiltrados = favoritosFiltrados;
             renderizarResultados(true);
         }
@@ -464,7 +478,7 @@
 
         function toggleFavorite(ean, nombre) {
             const index = favoritestelevision.indexOf(ean);
-            
+
             if (index === -1) {
                 if (confirm(`¿Desea añadir "${nombre}" a favoritos?`)) {
                     favoritestelevision.push(ean);
