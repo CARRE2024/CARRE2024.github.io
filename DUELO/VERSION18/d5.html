@@ -30,7 +30,7 @@
         button:hover {
             background-color: #45a049;
         }
-        #calendar, #cajaSelection {
+        #calendar, #cajaSelection, #creditDialog {
             margin-top: 20px;
             display: none;
             border: 1px solid #ddd;
@@ -79,6 +79,24 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .credit-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .credit-btn {
+            padding: 15px;
+            font-size: 16px;
+            flex: 1;
+            max-width: 150px;
+        }
+        .no-btn {
+            background-color: #f44336;
+        }
+        .no-btn:hover {
+            background-color: #d32f2f;
+        }
     </style>
 </head>
 <body>
@@ -104,6 +122,14 @@
             <button id="confirmDateBtn">Confirmar Fecha</button>
         </div>
         
+        <div id="creditDialog" style="display: none;">
+            <h3>¿Es un crédito?</h3>
+            <div class="credit-buttons">
+                <button id="yesCreditBtn" class="credit-btn">Sí</button>
+                <button id="noCreditBtn" class="credit-btn no-btn">No</button>
+            </div>
+        </div>
+        
         <div id="ticketsList" style="display: none;">
             <h2>Tickets Registrados</h2>
             <div id="ticketsContainer"></div>
@@ -120,11 +146,16 @@
             const calendarDiv = document.getElementById('calendar');
             const deliveryDateInput = document.getElementById('deliveryDate');
             const confirmDateBtn = document.getElementById('confirmDateBtn');
+            const creditDialog = document.getElementById('creditDialog');
+            const yesCreditBtn = document.getElementById('yesCreditBtn');
+            const noCreditBtn = document.getElementById('noCreditBtn');
             const ticketsListDiv = document.getElementById('ticketsList');
             const ticketsContainer = document.getElementById('ticketsContainer');
             
             let currentTicketNumber = null;
             let currentCaja = null;
+            let currentDeliveryDate = null;
+            let isCredit = false;
             
             // Validar que solo se ingresen números de 3 cifras
             ticketNumberInput.addEventListener('input', function() {
@@ -145,6 +176,7 @@
                 cajaSelectionDiv.style.display = 'block';
                 calendarDiv.style.display = 'none';
                 ticketsListDiv.style.display = 'none';
+                creditDialog.style.display = 'none';
             });
             
             // Event listeners para los botones de caja
@@ -153,6 +185,7 @@
                     currentCaja = this.getAttribute('data-caja');
                     cajaSelectionDiv.style.display = 'none';
                     calendarDiv.style.display = 'block';
+                    creditDialog.style.display = 'none';
                     
                     // Establecer la fecha mínima como hoy
                     const today = new Date().toISOString().split('T')[0];
@@ -165,6 +198,7 @@
                 displayTickets();
                 cajaSelectionDiv.style.display = 'none';
                 calendarDiv.style.display = 'none';
+                creditDialog.style.display = 'none';
             });
             
             confirmDateBtn.addEventListener('click', function() {
@@ -175,17 +209,35 @@
                     return;
                 }
                 
-                saveTicket(currentTicketNumber, currentCaja, deliveryDate);
+                currentDeliveryDate = deliveryDate;
                 calendarDiv.style.display = 'none';
+                creditDialog.style.display = 'block';
+            });
+            
+            yesCreditBtn.addEventListener('click', function() {
+                isCredit = true;
+                saveTicketData();
+            });
+            
+            noCreditBtn.addEventListener('click', function() {
+                isCredit = false;
+                saveTicketData();
+            });
+            
+            function saveTicketData() {
+                creditDialog.style.display = 'none';
+                saveTicket(currentTicketNumber, currentCaja, currentDeliveryDate, isCredit);
                 ticketNumberInput.value = '';
                 currentTicketNumber = null;
                 currentCaja = null;
+                currentDeliveryDate = null;
+                isCredit = false;
                 
                 // Mostrar los tickets actualizados
                 displayTickets();
-            });
+            }
             
-            function saveTicket(ticketNumber, caja, deliveryDate) {
+            function saveTicket(ticketNumber, caja, deliveryDate, isCredit) {
                 const today = new Date();
                 const todayFormatted = formatDate(today);
                 const todayFormattedForCode = formatDateForCode(today);
@@ -198,13 +250,17 @@
                 // Generar el código especial
                 const ticketCode = generateTicketCode(todayFormattedForCode, caja, ticketNumber);
                 
+                // Añadir "CRÉDITO" al código si es un crédito
+                const ticketType = isCredit ? "CRÉDITO" : "";
+                
                 const ticket = {
                     number: ticketNumber,
                     caja: caja,
                     creationDate: todayFormatted,
                     deliveryDate: formatDate(deliveryDateObj),
                     settlementDate: settlementDateFormatted,
-                    ticketCode: ticketCode
+                    ticketCode: ticketCode,
+                    type: ticketType
                 };
                 
                 // Obtener tickets existentes o crear un nuevo array
@@ -294,6 +350,7 @@
                                 <strong>Caja:</strong> ${ticket.caja}<br>
                                 <strong>Fecha de ticket:</strong> ${ticket.creationDate}<br>
                                 <strong>Fecha aproximada de liquidación:</strong> ${ticket.settlementDate}
+                                ${ticket.type ? `<br><strong>Tipo:</strong> ${ticket.type}` : ''}
                             </div>
                             <div>
                                 <strong>Fecha de entrega:</strong> ${ticket.deliveryDate}
@@ -302,7 +359,7 @@
                         
                         const ticketCodeElement = document.createElement('div');
                         ticketCodeElement.className = 'ticket-code';
-                        ticketCodeElement.textContent = `${ticket.creationDate}   ${ticket.settlementDate}   ${ticket.creationDate}     ${ticket.ticketCode}`;
+                        ticketCodeElement.textContent = `${ticket.creationDate}   ${ticket.settlementDate}   ${ticket.creationDate}     ${ticket.ticketCode} ${ticket.type}`;
                         
                         const deleteBtn = document.createElement('button');
                         deleteBtn.className = 'delete-btn';
