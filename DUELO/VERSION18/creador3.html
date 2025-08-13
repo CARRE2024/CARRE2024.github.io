@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Convertir CSV a JS</title>
+  
+  <!-- Importar fuentes de Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reseteo básico y estilo general de la página */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Estilo para el body para centrar el contenido */
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Añadir un efecto de partículas de fondo */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+    }
+
+    /* Ocultar el input de archivo, ya que solo queremos mostrar el botón */
+    #file-input {
+      display: none;
+    }
+
+    /* Estilo para los botones */
+    .convert-button, .upload-button {
+      display: inline-block;
+      padding: 20px 60px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(145deg, #6a11cb, #2575fc);
+      border: none;
+      border-radius: 50px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25),
+                  0 6px 6px rgba(0, 0, 0, 0.22);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 10px 0; /* Espaciado entre botones */
+    }
+
+    /* Efecto 3D y animaciones en hover para ambos botones */
+    .convert-button:hover, .upload-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 25px rgba(0, 0, 0, 0.35),
+                  0 10px 10px rgba(0, 0, 0, 0.22);
+    }
+
+    .convert-button:active, .upload-button:active {
+      transform: translateY(2px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2),
+                  0 3px 5px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Efecto para el botón Convertir */
+    .convert-button {
+      background: linear-gradient(145deg, #6a11cb, #2575fc);
+    }
+
+    .convert-button:hover {
+      background: linear-gradient(145deg, #2575fc, #6a11cb);
+    }
+
+    /* Estilo rojizo para el botón Subir */
+    .upload-button {
+      background: linear-gradient(145deg, #ff4e50, #f9d423);
+    }
+
+    .upload-button:hover {
+      background: linear-gradient(145deg, #f9d423, #ff4e50);
+    }
+
+    /* Animación de pulsación */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
+    }
+
+    .convert-button:active::after, .upload-button:active::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 1s ease-out;
+    }
+
+    /* Media Queries para Responsividad */
+    @media (max-width: 600px) {
+      .convert-button, .upload-button {
+        padding: 15px 40px;
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Botón para seleccionar archivo CSV -->
+  <label for="file-input" class="convert-button">Convertir</label>
+  <input type="file" id="file-input" accept=".csv">
+
+  <!-- Botón para redirigir a GitHub -->
+  <button class="upload-button" onclick="window.location.href='https://github.com/CARRE2024/CARRE2024.github.io'">Subir</button>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    let jsContent = '';
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      // Algunos navegadores no ponen type "text/csv", validamos también por extensión
+      const isCsv = file && (file.type.includes('csv') || /\.csv$/i.test(file.name));
+      if (isCsv) {
+        const userFileName = prompt("Introduce el nombre del archivo JS sin extensión:", "archivo_convertido");
+        if (userFileName) {
+          processFile(file, userFileName + '.js');
+        } else {
+          alert("Por favor introduce un nombre válido para el archivo.");
+        }
+      } else {
+        alert('Por favor selecciona un archivo CSV válido.');
+      }
+    });
+
+    function processFile(file, fileName) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const arrayBuffer = e.target.result;
+        const textDecoder = new TextDecoder("ISO-8859-1");
+        const decodedText = textDecoder.decode(arrayBuffer);
+        const modifiedContent = convertCsvToJs(decodedText);
+        jsContent = `const data = \`${modifiedContent.replace(/`/g, '\\`')}\`;`;
+        downloadFile(jsContent, fileName);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Parser de una línea de CSV que respeta comillas y comillas escapadas ("")
+    function parseCsvLine(line) {
+      const fields = [];
+      let current = '';
+      let insideQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          // Si son comillas escapadas dentro de un campo ("")
+          if (insideQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++; // saltar la segunda comilla
+          } else {
+            insideQuotes = !insideQuotes; // abrir/cerrar campo entre comillas
+            current += char; // mantenemos las comillas originales
+          }
+          continue;
+        }
+
+        if (char === ';' && !insideQuotes) {
+          fields.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      fields.push(current);
+      return fields;
+    }
+
+    function convertCsvToJs(csv) {
+      const lines = csv.split(/\r?\n/).filter(l => l.length > 0);
+      const modifiedLines = lines.map((rawLine) => {
+        // Regla: anteponer 0 a códigos de 12 dígitos que empiezan por 19
+        const line = rawLine.replace(/\b(19\d{10})\b/g, '0$1');
+
+        const fields = parseCsvLine(line);
+
+        // Limpiar ';' en la descripción de producto:
+        // Suele estar en el campo 6 (índice 5). Si no existe, usar índice 4.
+        if (fields.length > 5) {
+          fields[5] = fields[5].replace(/;/g, '');
+        } else if (fields.length > 4) {
+          fields[4] = fields[4].replace(/;/g, '');
+        }
+
+        return fields.join(';');
+      });
+
+      return modifiedLines.join('\n');
+    }
+
+    function downloadFile(content, fileName) {
+      const blob = new Blob([content], { type: 'application/javascript;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+
+</body>
+</html>
