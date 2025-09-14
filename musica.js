@@ -1,21 +1,14 @@
 // Título de la canción
-window.songTitle = "Clocks - Coldplay";
+window.songTitle = "Cumpleaños feliz";
 
-// Melodía (intro simplificada en C menor, arpegio)
-// C#4 - G#4 - C5 - G#4  (repetido en patrón)
+// Melodía en MIDI
+// G4, G4, A4, G4, C5, B4
+// G4, G4, A4, G4, D5, C5
+// G4, G4, G5, E5, C5, B4, A4
+// F5, F5, E5, C5, D5, C5
 window.melody = [
-  61,68,72,68,   // Db4 - Ab4 - C5 - Ab4
-  61,68,72,68,
-  61,68,72,68,
-  61,68,72,68,
-
-  63,70,75,70,   // Eb4 - Bb4 - D5 - Bb4
-  63,70,75,70,
-  63,70,75,70,
-  63,70,75,70,
-
-  58,65,70,65,   // A#3 - F4 - Bb4 - F4 (variación)
-  58,65,70,65,
-  58,65,70,65,
-  58,65,70,65
+  67,67,69,67,72,71,
+  67,67,69,67,74,72,
+  67,67,79,76,72,71,69,
+  77,77,76,72,74,72
 ];
