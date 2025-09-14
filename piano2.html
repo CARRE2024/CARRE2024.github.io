@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cumpleaños feliz - Aprende en piano</title>
+<style>
+  :root{
+    --white-w: 44px;
+    --white-h: 220px;
+    --black-w: 28px;
+    --black-h: 140px;
+  }
+  body{
+    margin:0;
+    font-family: system-ui, Arial, sans-serif;
+    background:#0f172a;
+    color:#e2e8f0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px;
+  }
+  h1{ font-size:20px; margin:10px 0; }
+  p{ font-size:13px; margin:0 0 20px; }
+
+  .controls{ margin-bottom:16px; }
+  button{
+    padding:8px 14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  #startBtn{ background:#2563eb; color:white; }
+  #stopBtn{ background:#475569; color:white; }
+
+  .keyboard{
+    position:relative;
+    height:var(--white-h);
+    user-select:none;
+  }
+  .key.white{
+    float:left;
+    width:var(--white-w);
+    height:var(--white-h);
+    background:white;
+    border:1px solid #999;
+    box-sizing:border-box;
+    position:relative;
+    z-index:1;
+    margin:0;
+  }
+  .key.white.highlight{
+    background:linear-gradient(#fff7c2,#ffe873);
+  }
+  .key.black{
+    position:absolute;
+    width:var(--black-w);
+    height:var(--black-h);
+    background:black;
+    border-radius:0 0 3px 3px;
+    z-index:2;
+  }
+  .key.black.highlight{
+    background:#facc15;
+  }
+  .label{
+    position:absolute;
+    bottom:6px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:10px;
+    color:#333;
+    pointer-events:none;
+  }
+  .status{ margin-top:10px; font-size:14px; }
+</style>
+</head>
+<body>
+  <h1>Aprende "Cumpleaños feliz"</h1>
+  <p>Se ilumina la tecla que debes tocar. Si la tocas bien por el micrófono avanza, si no suena un error.</p>
+
+  <div class="controls">
+    <button id="startBtn">Iniciar micrófono</button>
+    <button id="stopBtn" disabled>Detener</button>
+    <span id="prog">0 / 26</span>
+  </div>
+
+  <div class="keyboard" id="keyboard"></div>
+  <div class="status" id="status">Estado: esperando inicio...</div>
+
+<script>
+/* --- Configuración --- */
+// C2 (36) a C7 (96) = 61 teclas (36 blancas + 25 negras)
+const MIDI_START=36; 
+const MIDI_END=96;   
+const blackSemis=new Set([1,3,6,8,10]);
+
+// Cumpleaños feliz en Do mayor
+const melody=[
+  67,67,69,67,72,71,       // Cumpleaños feliz
+  67,67,69,67,74,72,       // Cumpleaños feliz
+  67,67,79,76,72,71,69,    // Te deseamos todos
+  77,77,76,72,74,72        // Cumpleaños feliz
+];
+const TOTAL_NOTES=melody.length;
+let currentIndex=0;
+
+/* --- Construcción del teclado --- */
+const keyboardDiv=document.getElementById('keyboard');
+const statusEl=document.getElementById('status');
+const progEl=document.getElementById('prog');
+const keyElements={};
+
+const whiteW=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--white-w'));
+const blackW=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--black-w'));
+
+let whiteIndex=0;
+for(let m=MIDI_START;m<=MIDI_END;m++){
+  const semi=m%12;
+  if(!blackSemis.has(semi)){
+    const w=document.createElement('div');
+    w.className='key white';
+    w.dataset.midi=m;
+    const lb=document.createElement('div');
+    lb.className='label';
+    lb.textContent=midiToName(m);
+    w.appendChild(lb);
+    keyboardDiv.appendChild(w);
+    keyElements[m]=w;
+    whiteIndex++;
+  }
+}
+whiteIndex=0;
+for(let m=MIDI_START;m<=MIDI_END;m++){
+  const semi=m%12;
+  if(!blackSemis.has(semi)){ whiteIndex++; }
+  else{
+    const left=(whiteIndex*whiteW)-(blackW/2);
+    const b=document.createElement('div');
+    b.className='key black';
+    b.dataset.midi=m;
+    b.style.left=left+'px';
+    keyElements[m]=b;
+    keyboardDiv.appendChild(b);
+  }
+}
+keyboardDiv.style.width=(whiteW*whiteIndex)+'px';
+
+function midiToName(m){
+  const names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return names[m%12]+(Math.floor(m/12)-1);
+}
+
+/* --- Lógica de juego --- */
+function clearHighlights(){
+  for(const m in keyElements){
+    keyElements[m].classList.remove('highlight');
+  }
+}
+function highlightMidi(m){
+  clearHighlights();
+  if(keyElements[m]) keyElements[m].classList.add('highlight');
+}
+function showCurrent(){
+  const target=melody[currentIndex];
+  highlightMidi(target);
+  statusEl.textContent='Toca: '+midiToName(target);
+  progEl.textContent=(currentIndex+1)+' / '+TOTAL_NOTES;
+}
+
+/* --- Micrófono y detección --- */
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+let analyser,sourceNode,rafID,stream;
+let buffer=new Float32Array(2048);
+
+async function startMic(){
+  if(audioCtx.state==='suspended') await audioCtx.resume();
+  stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  sourceNode=audioCtx.createMediaStreamSource(stream);
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=2048;
+  sourceNode.connect(analyser);
+  loop();
+  statusEl.textContent='Escuchando...';
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('stopBtn').disabled=false;
+  currentIndex=0; showCurrent();
+}
+function stopMic(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());}
+  cancelAnimationFrame(rafID);
+  statusEl.textContent='Micrófono detenido.';
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('stopBtn').disabled=true;
+}
+function autoCorrelate(buf,sampleRate){
+  const SIZE=buf.length;
+  let rms=0;
+  for(let i=0;i<SIZE;i++){ rms+=buf[i]*buf[i]; }
+  rms=Math.sqrt(rms/SIZE);
+  if(rms<0.01) return -1;
+  let r1=0,r2=SIZE-1,thres=0.2;
+  for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){r1=i;break;} }
+  for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break;} }
+  buf=buf.slice(r1,r2); const newSize=buf.length;
+  const c=new Array(newSize).fill(0);
+  for(let i=0;i<newSize;i++){ for(let j=0;j<newSize-i;j++){ c[i]+=buf[j]*buf[j+i]; } }
+  let d=0; while(c[d]>c[d+1]) d++;
+  let maxval=-1,maxpos=-1;
+  for(let i=d;i<newSize;i++){ if(c[i]>maxval){ maxval=c[i]; maxpos=i; } }
+  let T0=maxpos; if(T0===0) return -1;
+  let x1=c[T0-1],x2=c[T0],x3=c[T0+1];
+  const a=(x1+x3-2*x2)/2; const b=(x3-x1)/2;
+  if(a) T0=T0-b/(2*a);
+  const freq=sampleRate/T0;
+  if(freq<40||freq>2000) return -1;
+  return freq;
+}
+function midiFromFreq(f){ return Math.round(69+12*Math.log2(f/440)); }
+function loop(){
+  analyser.getFloatTimeDomainData(buffer);
+  const freq=autoCorrelate(buffer,audioCtx.sampleRate);
+  if(freq!==-1){
+    const midi=midiFromFreq(freq);
+    checkNote(midi);
+  }
+  rafID=requestAnimationFrame(loop);
+}
+function checkNote(midi){
+  const target=melody[currentIndex];
+  if(midi===target){
+    currentIndex++;
+    if(currentIndex>=TOTAL_NOTES){
+      statusEl.textContent='¡Completado!';
+      clearHighlights();
+      currentIndex=0;
+      setTimeout(showCurrent,1000);
+    } else {
+      showCurrent();
+    }
+  } else if(midi%12 === target%12){
+    statusEl.textContent='Es la nota correcta pero en otra octava: '+midiToName(midi);
+  } else if(midi>=MIDI_START && midi<=MIDI_END){
+    statusEl.textContent='Incorrecto, intenta: '+midiToName(target);
+  }
+}
+
+/* --- Botones --- */
+document.getElementById('startBtn').onclick=startMic;
+document.getElementById('stopBtn').onclick=stopMic;
+
+showCurrent();
+</script>
+</body>
+</html>
