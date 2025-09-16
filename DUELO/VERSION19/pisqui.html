@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Responsive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #2d2d2d 100%);
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            position: relative;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .button {
+            margin: 15px;
+            text-decoration: none;
+            filter: brightness(0) invert(1);
+            transition: all 0.3s ease;
+        }
+
+        .button img {
+            width: 100px;
+            height: auto;
+            transition: transform 0.2s, opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .button:hover {
+            filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
+        }
+
+        .button:hover img {
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .button:nth-child(1) img {
+            animation: fadeIn 0.5s ease-in-out 0.2s forwards;
+        }
+
+        .button:nth-child(2) img {
+            animation: fadeIn 0.5s ease-in-out 0.4s forwards;
+        }
+
+        .button:nth-child(3) img {
+            animation: fadeIn 0.5s ease-in-out 0.6s forwards;
+        }
+
+        .button:nth-child(4) img {
+            animation: fadeIn 0.5s ease-in-out 0.8s forwards;
+        }
+
+        .button:nth-child(5) img {
+            animation: fadeIn 0.5s ease-in-out 1s forwards;
+        }
+
+        .fecha-texto,
+        .version-texto {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .fecha-texto {
+            top: 15px;
+            right: 20px;
+        }
+
+        .version-texto {
+            top: 15px;
+            left: 20px;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: none !important;
+        }
+
+        .version-texto2 {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: none !important;
+        }
+
+        .version-texto:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+            text-decoration: none !important;
+        }
+
+        .creditos-texto {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            bottom: 15px;
+            right: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .button {
+                width: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        }
+
+        /* Zona invisible para detectar clics */
+        .easter-egg-zone {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        /* Contenedor de la imagen pascua */
+        .easter-egg {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .easter-egg img {
+            max-width: 80vw;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+
+<body>
+    <a href="tutorial.mp4" class="version-texto">Tutorial 19 BETA</a>
+    <div class="fecha-texto" id="fechaTexto"></div>
+
+    <div class="container">
+        <a href="gae.html" class="button">
+            <img src="gae.png" alt="Gae">
+        </a>
+        <a href="television.html" class="button">
+            <img src="television.png" alt="Television">
+        </a>
+        <a href="ofimatica.html" class="button">
+            <img src="ofimatica.png" alt="Ofimática">
+        </a>
+        <a href="pae.html" class="button">
+            <img src="pae.png" alt="Pae">
+        </a>
+        <a href="sonido.html" class="button">
+            <img src="sonido.png" alt="Sonido">
+        </a>
+    </div>
+
+    <div class="creditos-texto"><a href="d5.html" class="version-texto2">idea by Baldo colab Escaño</a></div>
+
+    <!-- Zona invisible para clics -->
+    <div class="easter-egg-zone" id="easterZone"></div>
+
+    <!-- Imagen del huevo de pascua -->
+    <div class="easter-egg" id="easterEgg">
+        <img src="pascua.gif" alt="Huevo de Pascua">
+    </div>
+
+    <script src="fechaactual.js"></script>
+    <script>
+        document.getElementById('fechaTexto').textContent = fecha;
+
+        let clickCount = 0;
+        const zone = document.getElementById('easterZone');
+        const egg = document.getElementById('easterEgg');
+
+        zone.addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 5) {
+                egg.style.display = 'block';
+                clickCount = 0;
+                setTimeout(() => {
+                    egg.style.display = 'none';
+                }, 5000); // la imagen desaparece después de 5s
+            }
+        });
+    </script>
+</body>
+
+</html>

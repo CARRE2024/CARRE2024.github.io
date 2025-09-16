@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        #search {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 32px;
+        }
+
+        #searchButton,
+        #deleteStockZeroButton,
+        #showFavoritesButton,
+        #clearFavoritesButton {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #showFavoritesButton.active,
+        #clearFavoritesButton {
+            background-color: #f44336;
+        }
+
+        #clearFavoritesButton {
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .barcode {
+            height: 80px;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .modal img {
+            height: 200px;
+        }
+
+        .toggle {
+            display: none;
+        }
+
+        .toggle-label {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle:checked+.toggle-label {
+            background-color: #4caf50;
+        }
+
+        .toggle:checked+.toggle-label::before {
+            transform: translateX(30px);
+        }
+
+        .toggle2 {
+            display: none;
+        }
+
+        .toggle-label2 {
+            width: 60px;
+            height: 30px;
+            background-color: gray;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label2::before {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle2:checked+.toggle-label2 {
+            background-color: #4caf50;
+        }
+
+        .toggle2:checked+.toggle-label2::before {
+            transform: translateX(30px);
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .icon-button img {
+            width: 60px;
+            height: 30px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="television.js"></script>
+    <script src="televisiontraduccion.js"></script>
+</head>
+
+<body>
+
+    <div id="searchContainer">
+        <input type="text" id="search" oninput="ponerMayusculas()">
+
+        <button id="searchButton" onclick="filtrarTabla()">Buscar(separa por comas)</button>
+        <button id="showFavoritesButton" onclick="toggleFavorites()">Mostrar favoritos</button>
+        <button id="clearFavoritesButton" onclick="clearFavorites()">Limpiar favoritos</button>
+
+        <input type="checkbox" id="toggle" class="toggle">
+        <label for="toggle" class="toggle-label"></label>ELIMINAR STOCK 0 EN TIENDA
+        <input type="checkbox" id="toggle2" class="toggle2">
+        <label for="toggle2" class="toggle-label2"></label>AL MENOS 2 UNIDADES
+        <button id="microphoneButton" class="icon-button">
+            <img src="microfono.png" alt="Micrófono">
+        </button>
+    </div>
+
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>Stock</th>
+                <th>Sup</th>
+                <th>Nombre del producto</th>
+                <th id="precioAproxHeader">Precio aprox</th>
+                <th>Oferta</th>
+                <th>SMS</th>
+                <th>EAN</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se insertarán los datos -->
+        </tbody>
+    </table>
+
+    <!-- Modal para mostrar el código de barras -->
+    <div id="barcodeModal" class="modal" onclick="cerrarModal()">
+        <div class="modal-content">
+            <img id="modalBarcodeImage" alt="Código de barras">
+        </div>
+    </div>
+    <input type="text" id="loqueescucha" size="50"><br>
+    <input type="text" id="provisional" size="50"><br>
+    <script>
+        let resultadosFiltrados = [];
+        let isShowingFavorites = false;
+        let favoritestelevision = JSON.parse(localStorage.getItem('favoritestelevision')) || [];
+
+        function ponerMayusculas() {
+            const textoEscrito = document.getElementById('search');
+            textoEscrito.value = textoEscrito.value.toUpperCase();
+        }
+
+        function filtrarTabla() {
+            const entrada = document.getElementById('search').value.toLowerCase();
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            let filas;
+
+            if (isShowingFavorites) {
+                // Si estamos en vista de favoritos, trabajamos solo con los favoritos
+                filas = data.trim().split('\n').filter(row => {
+                    const columnas = row.split(';');
+                    const ean = columnas[7].trim();
+                    return favoritestelevision.includes(ean);
+                });
+            } else {
+                // Si no, trabajamos con todos los productos
+                filas = data.trim().split('\n');
+            }
+
+            // Primero separamos por comas para obtener los grupos AND
+            const gruposAND = entrada.split(',').map(grupo => grupo.trim()).filter(grupo => grupo);
+
+            resultadosFiltrados = [];
+
+            filas.forEach(row => {
+                const columnas = row.split(';');
+                const nombreProducto = columnas[5].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+
+                // Para cada grupo AND, verificamos si cumple con al menos uno de los términos OR (separados por punto)
+                let cumpleTodosLosGrupos = true;
+
+                for (const grupo of gruposAND) {
+                    if (grupo.includes('.')) {
+                        // Este grupo tiene términos OR (separados por punto)
+                        const terminosOR = grupo.split('.').map(term => term.trim()).filter(term => term);
+                        const cumpleOR = terminosOR.some(term => nombreProducto.includes(term));
+
+                        if (!cumpleOR) {
+                            cumpleTodosLosGrupos = false;
+                            break;
+                        }
+                    } else {
+                        // Es un término simple (AND)
+                        if (!nombreProducto.includes(grupo)) {
+                            cumpleTodosLosGrupos = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (cumpleTodosLosGrupos) {
+                    resultadosFiltrados.push({
+                        nombreProducto: columnas[5].trim(),
+                        sms: columnas[6].trim(),
+                        ean: columnas[7].trim(),
+                        sup: columnas[10].trim(),
+                        precioAprox: columnas[11].trim(),
+                        oferta: columnas[13].trim(),
+                        stockAprox: columnas[12].trim(),
+                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
+                    });
+                }
+            });
+
+            ordenarResultados();
+            renderizarResultados();
+            document.getElementById('toggle').checked = false;
+        }
+
+        function ordenarResultados() {
+            resultadosFiltrados.sort((a, b) => {
+                const porcentajeA = a.sup.endsWith('%') ? parseInt(a.sup) : 0;
+                const porcentageB = b.sup.endsWith('%') ? parseInt(b.sup) : 0;
+
+                if (porcentajeA !== porcentageB) {
+                    return porcentageB - porcentajeA;
+                } else {
+                    return (b.valorPrecio || 0) - (a.valorPrecio || 0);
+                }
+            });
+        }
+
+        function renderizarResultados(isFavoritesView = false) {
+            const cuerpoTabla = document.getElementById('productTable').querySelector('tbody');
+            cuerpoTabla.innerHTML = '';
+
+            resultadosFiltrados.forEach(result => {
+                const fila = document.createElement('tr');
+
+                const celdaStockAprox = document.createElement('td');
+                celdaStockAprox.textContent = result.stockAprox === '#N/A' ? ' ' : result.stockAprox;
+                fila.appendChild(celdaStockAprox);
+
+                const celdaSup = document.createElement('td');
+                const linkProducto = document.createElement('a');
+                linkProducto.href = `https://www.carrefour.es/?q=${result.ean}`;
+                linkProducto.target = '_blank';
+                linkProducto.textContent = result.sup;
+
+                linkProducto.onclick = (event) => {
+                    event.preventDefault();
+                    navigator.clipboard.writeText(result.ean).then(() => {
+                        window.open(linkProducto.href, '_blank');
+                    });
+                };
+
+                celdaSup.appendChild(linkProducto);
+                fila.appendChild(celdaSup);
+
+                const celdaNombreArticulo = document.createElement('td');
+                celdaNombreArticulo.textContent = result.nombreProducto === '#N/A' ? '¿' : result.nombreProducto;
+                celdaNombreArticulo.style.cursor = 'pointer';
+                celdaNombreArticulo.style.color = favoritestelevision.includes(result.ean) ? 'red' : 'inherit';
+                celdaNombreArticulo.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(result.ean, result.nombreProducto);
+                };
+                fila.appendChild(celdaNombreArticulo);
+
+                const celdaPrecioAprox = document.createElement('td');
+                celdaPrecioAprox.textContent = result.precioAprox === '#N/A' ? ' ' : result.precioAprox;
+                fila.appendChild(celdaPrecioAprox);
+
+                const celdaoferta = document.createElement('td');
+                celdaoferta.textContent = result.oferta === '#N/A' ? ' ' : result.oferta;
+                fila.appendChild(celdaoferta);
+
+                const celdaSms = document.createElement('td');
+                celdaSms.textContent = result.sms === '#N/A' ? '¿' : result.sms;
+                fila.appendChild(celdaSms);
+
+                const celdaEan = document.createElement('td');
+                const imagenCodigoBarras = document.createElement('img');
+                imagenCodigoBarras.className = 'barcode';
+                JsBarcode(imagenCodigoBarras, result.ean, {
+                    width: 4,
+                    height: 80
+                });
+
+                imagenCodigoBarras.onclick = () => mostrarCodigoBarras(result.ean);
+                celdaEan.appendChild(imagenCodigoBarras);
+                fila.appendChild(celdaEan);
+
+                cuerpoTabla.appendChild(fila);
+            });
+        }
+
+        function eliminarStock0() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => result.stockAprox !== '0');
+            renderizarResultados();
+        }
+
+        function eliminarStockMenor2() {
+            resultadosFiltrados = resultadosFiltrados.filter(result => Number(result.stockAprox) > 1);
+            renderizarResultados();
+        }
+
+        function mostrarCodigoBarras(reference) {
+            const modal = document.getElementById('barcodeModal');
+            const modalBarcodeImage = document.getElementById('modalBarcodeImage');
+            JsBarcode(modalBarcodeImage, reference, {
+                width: 4,
+                height: 200
+            });
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById('barcodeModal');
+            modal.style.display = 'none';
+        }
+
+        function toggleFavorites() {
+            isShowingFavorites = !isShowingFavorites;
+            const favoritesButton = document.getElementById('showFavoritesButton');
+            const clearButton = document.getElementById('clearFavoritesButton');
+
+            if (isShowingFavorites) {
+                favoritesButton.textContent = 'Volver atrás';
+                favoritesButton.classList.add('active');
+                clearButton.style.display = 'block';
+                document.getElementById('toggle').checked = false;
+                document.getElementById('toggle2').checked = false;
+                showFavorites();
+            } else {
+                favoritesButton.textContent = 'Mostrar favoritos';
+                favoritesButton.classList.remove('active');
+                clearButton.style.display = 'none';
+                location.reload();
+            }
+        }
+
+        function showFavorites() {
+            if (favoritestelevision.length === 0) {
+                alert('No tienes productos favoritos guardados.');
+                toggleFavorites();
+                return;
+            }
+
+            const filas = data.trim().split('\n');
+            const favoritosFiltrados = [];
+
+            filas.forEach(row => {
+                const columnas = row.split(';');
+                const ean = columnas[7].trim();
+
+                if (favoritestelevision.includes(ean)) {
+                    favoritosFiltrados.push({
+                        nombreProducto: columnas[5].trim(),
+                        sms: columnas[6].trim(),
+                        ean: ean,
+                        sup: columnas[10].trim(),
+                        precioAprox: columnas[11].trim(),
+                        oferta: columnas[13].trim(),
+                        stockAprox: columnas[12].trim(),
+                        valorPrecio: parseFloat(columnas[10].replace('€', '').replace(',', '.')) || null
+                    });
+                }
+            });
+
+            resultadosFiltrados = favoritosFiltrados;
+            renderizarResultados(true);
+        }
+
+        function clearFavorites() {
+            if (confirm('¿Estás seguro de que quieres eliminar todos tus favoritos?')) {
+                favoritestelevision = [];
+                localStorage.setItem('favoritestelevision', JSON.stringify(favoritestelevision));
+                showFavorites();
+            }
+        }
+
+        function toggleFavorite(ean, nombre) {
+            const index = favoritestelevision.indexOf(ean);
+
+            if (index === -1) {
+                if (confirm(`¿Desea añadir "${nombre}" a favoritos?`)) {
+                    favoritestelevision.push(ean);
+                    localStorage.setItem('favoritestelevision', JSON.stringify(favoritestelevision));
+                    renderizarResultados(isShowingFavorites);
+                }
+            } else {
+                if (confirm(`¿Desea eliminar "${nombre}" de favoritos?`)) {
+                    favoritestelevision.splice(index, 1);
+                    localStorage.setItem('favoritestelevision', JSON.stringify(favoritestelevision));
+                    if (isShowingFavorites) {
+                        showFavorites();
+                    } else {
+                        renderizarResultados();
+                    }
+                }
+            }
+        }
+
+        function setupHeaderClick() {
+            const precioAproxHeader = document.getElementById('precioAproxHeader');
+            precioAproxHeader.addEventListener('click', simplificacion);
+        }
+
+        function simplificacion() {
+            resultadosFiltrados.sort((a, b) => {
+                const precioA = parseFloat(a.precioAprox.replace('€', '').replace(',', '.')) || 0;
+                const precioB = parseFloat(b.precioAprox.replace('€', '').replace(',', '.')) || 0;
+                return precioA - precioB;
+            });
+            renderizarResultados();
+        }
+
+        document.getElementById("search").addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("searchButton").click();
+            }
+        });
+
+        const toggle = document.getElementById('toggle');
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                eliminarStock0();
+            } else {
+                filtrarTabla();
+            }
+        });
+
+        const toggle2 = document.getElementById('toggle2');
+        toggle2.addEventListener('change', () => {
+            if (toggle2.checked) {
+                eliminarStockMenor2();
+            } else {
+                filtrarTabla();
+            }
+        });
+
+        window.onload = () => {
+            setupHeaderClick();
+            filtrarTabla();
+            favoritestelevision = JSON.parse(localStorage.getItem('favoritestelevision')) || [];
+        };
+    </script>
+    <script>
+        const button = document.getElementById('microphoneButton');
+        const loqueescuchaInput = document.getElementById('loqueescucha');
+        const provisionalInput = document.getElementById('provisional');
+        const searchInput = document.getElementById('search');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+        recognition.continuous = false;
+        recognition.lang = 'es-ES';
+
+        button.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript;
+            loqueescuchaInput.value = result;
+            const formattedResult = formatSpeech(result);
+            provisionalInput.value = formattedResult;
+
+            let searchText = formattedResult;
+
+            for (const [key, value] of Object.entries(palabrasclave)) {
+                const regex = new RegExp(`\\b${key}\\b`, 'gi');
+                searchText = searchText.replace(regex, value);
+            }
+
+            const parts = searchText.split(' ')
+                .map(part => part.trim())
+                .filter(part => Object.values(palabrasclave).includes(part));
+
+            searchInput.value = parts.join(',');
+        };
+
+        function formatSpeech(speech) {
+            const removeAccents = (text) => {
+                return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            };
+            return removeAccents(speech).toUpperCase();
+        }
+    </script>
+</body>
+
+</html>
