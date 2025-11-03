@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar - Preguntas y Respuestas</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+h1 { color: #333; }
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 90%;
+  max-width: 600px;
+}
+label { font-weight: bold; }
+textarea {
+  width: 100%;
+  height: 60px;
+  resize: none;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+button {
+  padding: 10px 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  margin-top: 10px;
+}
+button:hover { background-color: #0056b3; }
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+.overlay button {
+  font-size: 32px;
+  padding: 20px 40px;
+  background: #28a745;
+}
+.overlay.incorrecto button { background: #dc3545; }
+.overlay.ganaste button {
+  background: #ffc107;
+  color: black;
+}
+</style>
+</head>
+<body>
+<h1>Juego de Preguntas</h1>
+<button id="iniciar">Iniciar</button>
+
+<div class="container">
+  <label>Pregunta:</label>
+  <textarea id="pregunta" readonly></textarea>
+  <label>Respuesta:</label>
+  <textarea id="respuesta" readonly></textarea>
+  <label>Palabras clave:</label>
+  <textarea id="palabrasclave" readonly></textarea>
+  <label>Lo que he escuchado:</label>
+  <textarea id="loqueheescuchado" readonly></textarea>
+</div>
+
+<div id="overlay" class="overlay" style="display:none;">
+  <button id="overlayBtn"></button>
+</div>
+
+<script>
+const preguntas = [
+  {
+    pregunta: "¿Cuándo apareció el Australopitecus?",
+    respuesta: "Hace 4 millones de años.",
+    palabrasclave: "4"
+  },
+  {
+    pregunta: "¿Qué características tenía el Australopitecus?",
+    respuesta: "No fabricaban herramientas y eran bípedos.",
+    palabrasclave: "No,herramientas,bípedos"
+  },
+  {
+    pregunta: "¿Cuándo apareció el Homo Habilis?",
+    respuesta: "Hace 3 millones de años.",
+    palabrasclave: "tres"
+  },
+  {
+    pregunta: "¿Qué características tenía el Homo Habilis?",
+    respuesta: "Fabricaban herramientas y se comunicaban.",
+    palabrasclave: "herramientas,comunicaban"
+  }  
+];
+
+let preguntasRestantes = [...preguntas];
+let preguntaActual = null;
+let mirespuesta = "";
+let recognition = null;
+let hablando = false;
+let escuchando = false;
+
+const iniciarBtn = document.getElementById('iniciar');
+const preguntaTxt = document.getElementById('pregunta');
+const respuestaTxt = document.getElementById('respuesta');
+const palabrasTxt = document.getElementById('palabrasclave');
+const escuchadoTxt = document.getElementById('loqueheescuchado');
+const overlay = document.getElementById('overlay');
+const overlayBtn = document.getElementById('overlayBtn');
+
+// Normaliza texto: sin tildes, minúsculas
+function normalizarTexto(txt) {
+  return txt
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Convierte números en palabras ↔ cifras
+function equivalenciasNumeros(txt) {
+  return txt
+    .replace(/\buno\b/g, "1").replace(/\buna\b/g, "1")
+    .replace(/\bdos\b/g, "2")
+    .replace(/\btres\b/g, "3")
+    .replace(/\bcuatro\b/g, "4")
+    .replace(/\bcinco\b/g, "5")
+    .replace(/\bseis\b/g, "6")
+    .replace(/\bsiete\b/g, "7")
+    .replace(/\bocho\b/g, "8")
+    .replace(/\bnueve\b/g, "9")
+    .replace(/\bdiez\b/g, "10");
+}
+
+// Porcentaje de coincidencia entre dos palabras
+function similitud(p1, p2) {
+  let m = 0;
+  for (let c of p1) if (p2.includes(c)) m++;
+  return m / Math.max(p1.length, p2.length);
+}
+
+function comprobar() {
+  const claves = normalizarTexto(preguntaActual.palabrasclave).split(",");
+  const resp = equivalenciasNumeros(normalizarTexto(mirespuesta));
+  let aciertos = 0;
+  for (let palabra of claves) {
+    palabra = equivalenciasNumeros(palabra.trim());
+    const listaPalabras = resp.split(/\s+/);
+    let encontrada = false;
+    for (let p of listaPalabras) {
+      if (similitud(palabra, p) >= 0.6) { // 60%
+        encontrada = true;
+        break;
+      }
+    }
+    if (encontrada) aciertos++;
+  }
+  const esCorrecto = aciertos === claves.length;
+  mostrarOverlay(esCorrecto);
+}
+
+function mostrarOverlay(correcto) {
+  overlay.style.display = "flex";
+  overlay.className = "overlay " + (correcto ? "correcto" : "incorrecto");
+  overlayBtn.textContent = correcto ? "CORRECTO" : "INCORRECTO";
+  overlayBtn.focus();
+  
+  overlayBtn.onclick = () => {
+    overlay.style.display = "none";
+    if (correcto) {
+      preguntasRestantes = preguntasRestantes.filter(p => p !== preguntaActual);
+    }
+    if (preguntasRestantes.length === 0) {
+      mostrarGanaste();
+    } else {
+      // Espera un momento antes de cargar la siguiente pregunta
+      setTimeout(cargarPregunta, 500);
+    }
+  };
+}
+
+function mostrarGanaste() {
+  overlay.style.display = "flex";
+  overlay.className = "overlay ganaste";
+  overlayBtn.textContent = "¡GANASTE! Volver a jugar";
+  overlayBtn.onclick = () => location.reload();
+}
+
+// Función hablar controlada
+function hablar(texto, callback) {
+  if (hablando) window.speechSynthesis.cancel(); // limpia cola anterior
+  const synth = window.speechSynthesis;
+  const utter = new SpeechSynthesisUtterance(texto);
+  utter.lang = "es-ES";
+  hablando = true;
+  utter.onend = () => {
+    hablando = false;
+    if (callback) callback();
+  };
+  synth.speak(utter);
+}
+
+function escuchar() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert("Tu navegador no soporta reconocimiento de voz");
+    return;
+  }
+
+  if (escuchando) {
+    recognition.stop();
+    escuchando = false;
+  }
+
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "es-ES";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  escuchando = true;
+
+  recognition.onresult = (event) => {
+    escuchando = false;
+    mirespuesta = event.results[0][0].transcript;
+    escuchadoTxt.value = mirespuesta;
+    setTimeout(comprobar, 2000);
+  };
+  
+  recognition.onerror = () => { escuchando = false; };
+  recognition.onend = () => { escuchando = false; };
+
+  recognition.start();
+}
+
+function cargarPregunta() {
+  if (hablando || escuchando) {
+    window.speechSynthesis.cancel();
+    if (recognition) recognition.stop();
+  }
+
+  escuchadoTxt.value = "";
+  preguntaActual = preguntasRestantes[Math.floor(Math.random() * preguntasRestantes.length)];
+  preguntaTxt.value = preguntaActual.pregunta;
+  respuestaTxt.value = preguntaActual.respuesta;
+  palabrasTxt.value = preguntaActual.palabrasclave;
+
+  // Asegurar que no hay solapamientos entre habla y escucha
+  setTimeout(() => {
+    hablar(preguntaActual.pregunta, () => {
+      setTimeout(() => {
+        escuchar();
+      }, 500); // medio segundo tras hablar
+    });
+  }, 300);
+}
+
+iniciarBtn.onclick = () => {
+  iniciarBtn.disabled = true;
+  cargarPregunta();
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && overlay.style.display === "flex") {
+    overlayBtn.click();
+  }
+});
+</script>
+</body>
+</html>
