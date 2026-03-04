@@ -339,7 +339,7 @@
 
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
-                linkProducto.href = `https://www.google.com/search?q=site:carrefour.es+${result.ean}&btnI=1`;
+                linkProducto.href = `https://www.carrefour.es/?query=${result.ean}`;
                 linkProducto.target = '_blank';
                 linkProducto.textContent = result.sup;
 

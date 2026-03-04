@@ -237,7 +237,7 @@
     <script>
         let resultadosFiltrados = [];
         let isShowingFavorites = false;
-        let favoritespae = JSON.parse(localStorage.getItem('favoritestelevision')) || [];
+        let favoritespae = JSON.parse(localStorage.getItem('favoritespae')) || [];
 
         function ponerMayusculas() {
             const textoEscrito = document.getElementById('search');
@@ -339,7 +339,7 @@
 
                 const celdaSup = document.createElement('td');
                 const linkProducto = document.createElement('a');
-                linkProducto.href = `https://www.google.com/search?q=site:carrefour.es+${result.ean}&btnI=1`;
+                linkProducto.href = `https://www.carrefour.es/?query=${result.ean}`;
                 linkProducto.target = '_blank';
                 linkProducto.textContent = result.sup;
 
@@ -471,7 +471,7 @@
         function clearFavorites() {
             if (confirm('¿Estás seguro de que quieres eliminar todos tus favoritos?')) {
                 favoritespae = [];
-                localStorage.setItem('favoritestelevision', JSON.stringify(favoritespae));
+                localStorage.setItem('favoritespae', JSON.stringify(favoritespae));
                 showFavorites();
             }
         }
@@ -482,13 +482,13 @@
             if (index === -1) {
                 if (confirm(`¿Desea añadir "${nombre}" a favoritos?`)) {
                     favoritespae.push(ean);
-                    localStorage.setItem('favoritestelevision', JSON.stringify(favoritespae));
+                    localStorage.setItem('favoritespae', JSON.stringify(favoritespae));
                     renderizarResultados(isShowingFavorites);
                 }
             } else {
                 if (confirm(`¿Desea eliminar "${nombre}" de favoritos?`)) {
                     favoritespae.splice(index, 1);
-                    localStorage.setItem('favoritestelevision', JSON.stringify(favoritespae));
+                    localStorage.setItem('favoritespae', JSON.stringify(favoritespae));
                     if (isShowingFavorites) {
                         showFavorites();
                     } else {
@@ -540,7 +540,7 @@
         window.onload = () => {
             setupHeaderClick();
             filtrarTabla();
-            favoritespae = JSON.parse(localStorage.getItem('favoritestelevision')) || [];
+            favoritespae = JSON.parse(localStorage.getItem('favoritespae')) || [];
         };
     </script>
     <script>
