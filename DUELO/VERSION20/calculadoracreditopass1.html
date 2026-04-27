@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Compra a Crédito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F2EC;
+    --surface: #FFFDF8;
+    --ink: #1A1714;
+    --ink-muted: #7A7368;
+    --accent: #C8491A;
+    --border: #E2DDD6;
+    --shadow: rgba(26,23,20,0.07);
+  }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  header { margin-bottom: 2.5rem; }
+
+  .label-tin {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    background: var(--border);
+    padding: 0.25rem 0.6rem;
+    border-radius: 2px;
+    margin-bottom: 0.8rem;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 6vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  h1 em { font-style: italic; color: var(--accent); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px var(--shadow);
+    margin-bottom: 1.5rem;
+  }
+
+  .field { margin-bottom: 1.5rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .input-wrap { position: relative; display: flex; align-items: center; }
+
+  .input-wrap input {
+    width: 100%;
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--border);
+    padding: 0.3rem 2.2rem 0.3rem 0;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  .input-wrap input::-webkit-outer-spin-button,
+  .input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .input-wrap input:focus { border-bottom-color: var(--accent); }
+
+  .input-wrap .unit {
+    position: absolute;
+    right: 0;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+  .error-msg {
+    font-size: 0.78rem;
+    color: var(--accent);
+    margin-top: 0.6rem;
+    min-height: 1.1em;
+  }
+
+  .results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .results.visible { opacity: 1; transform: translateY(0); }
+
+  .results-header {
+    background: var(--ink);
+    color: #F5F2EC;
+    padding: 1rem 2rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .results-body { padding: 0.25rem 2rem 1.5rem; }
+
+  .result-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .result-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    text-align: right;
+  }
+
+  .result-value.accent { color: var(--accent); }
+
+  .result-value small {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .result-value .muted {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+
+  .summary {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    line-height: 1.6;
+    padding: 0.75rem 2rem 1rem;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: 2rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 520px) {
+    .card { padding: 1.25rem; }
+    .results-body { padding: 0.25rem 1.25rem 1.25rem; }
+    .results-header, .summary { padding-left: 1.25rem; padding-right: 1.25rem; }
+    h1 { font-size: 1.9rem; }
+    .result-value { font-size: 1.35rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <span class="label-tin">TIN 17,50% · Tarjeta PASS</span>
+    <h1>Simulador de<br>compra a <em>crédito</em></h1>
+  </header>
+
+  <div class="card">
+    <div class="field">
+      <label>Cuota mensual de la tarjeta</label>
+      <div class="input-wrap">
+        <input type="number" id="cuota" min="1" step="1" placeholder="30" inputmode="numeric">
+        <span class="unit">€</span>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="field">
+      <label>Importe del producto</label>
+      <div class="input-wrap">
+        <input type="number" id="importe" min="1" step="1" placeholder="649" inputmode="numeric">
+        <span class="unit">€</span>
+      </div>
+    </div>
+    <div class="error-msg" id="error"></div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-header">Resultado del cálculo</div>
+    <div class="results-body">
+      <div class="result-row">
+        <span class="result-label">Cuotas totales</span>
+        <span class="result-value" id="r-cuotas">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Cuotas regulares de</span>
+        <span class="result-value" id="r-regular">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Cuota final</span>
+        <span class="result-value accent" id="r-final">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Total intereses</span>
+        <span class="result-value" id="r-intereses">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Total a pagar</span>
+        <span class="result-value" id="r-total">—</span>
+      </div>
+    </div>
+    <div class="summary" id="summary"></div>
+  </div>
+
+  <footer>
+    TIN 17,50% · Sin comisión · Sin seguro<br>
+    Cobro día 1 · Facturación día 20
+  </footer>
+
+</div>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Replica exacta de la hoja TABLA del Excel (Cliente TIN 17,50%).
+//
+// Fórmula clave D18 (días del primer periodo de interés):
+//   Si día(hoy) < 20  →  D18 = (EOM(mes_actual) − hoy) + 1
+//   Si día(hoy) ≥ 20  →  D18 = (EOM(mes_siguiente) − hoy) + 1
+//
+// Esto replica exactamente =IF(day<20, (T17−S17)+1, (T18−S17)+1) del Excel.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TIN      = 0.175;
+const DIA_FACT = 20;
+
+function eom(y, m) {          // último día del mes m (1-indexed)
+  return new Date(y, m, 0);
+}
+
+function addMonths(y, m, n) {
+  m += n;
+  while (m > 12) { m -= 12; y++; }
+  while (m < 1)  { m += 12; y--; }
+  return { y, m };
+}
+
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function daysInYear(year) {
+  return (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 366 : 365;
+}
+
+function simulate(cuota, importe) {
+  const today  = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayD = today.getDate();
+  const todayY = today.getFullYear();
+  const todayM = today.getMonth() + 1;   // 1-indexed
+  const dayLt  = todayD < DIA_FACT;
+
+  // S17 = today, T17 = EOM(mes actual)
+  const S17 = today;
+  const T17 = eom(todayY, todayM);
+
+  // S18 = primer día del mes siguiente, T18 = EOM(mes siguiente)
+  const { y: s18y, m: s18m } = addMonths(todayY, todayM, 1);
+  const S18 = new Date(s18y, s18m - 1, 1);
+  const T18 = eom(s18y, s18m);
+
+  // U17 = primera fecha de cobro (día 1)
+  //   día < 20  → día 1 del mes actual
+  //   día ≥ 20  → día 1 del mes siguiente
+  const upRef = dayLt ? { y: todayY, m: todayM } : { y: s18y, m: s18m };
+  let U_prev = new Date(upRef.y, upRef.m - 1, 1);
+
+  // D18 (primer periodo):
+  //   día < 20  → (T17 − S17) + 1   [desde hoy hasta fin de mes actual]
+  //   día ≥ 20  → (T18 − S17) + 1   [desde hoy hasta fin de mes siguiente]
+  const D_first = dayLt
+    ? daysBetween(S17, T17) + 1
+    : daysBetween(S17, T18) + 1;
+
+  // Año para la tasa diaria del primer periodo
+  const fy0 = todayY;
+
+  // Para los periodos siguientes, S_prev/T_prev arrancan en S18 (día<20) o en el mes tras S18 (día≥20)
+  let S_prev, T_prev;
+  let S_curr, T_curr;
+  if (dayLt) {
+    S_prev = S17; T_prev = T17;
+    S_curr = S18; T_curr = T18;
+  } else {
+    // El primer periodo ya cubrió hasta T18, así que el siguiente empieza al mes siguiente de S18
+    S_prev = S17; T_prev = T18;   // "anterior" ficticio que termina en T18
+    const { y: ny, m: nm } = addMonths(s18y, s18m, 1);
+    S_curr = new Date(ny, nm - 1, 1);
+    T_curr = eom(ny, nm);
+  }
+
+  let I_fixed = importe;
+  let I_prev  = importe;
+  let K_prev = 0, L_prev = 0, M_prev = 0, H_prev = 0, I_row_prev = importe;
+  let rows = [];
+
+  for (let i = 0; i < 99; i++) {
+    if (I_prev < 0.005) break;
+
+    const D = i === 0 ? D_first : daysBetween(S_prev, T_prev) + 1;
+
+    // E = EOMONTH(U_prev, 0) − U_prev
+    const U_eom = eom(U_prev.getFullYear(), U_prev.getMonth() + 1);
+    const E = daysBetween(U_prev, U_eom);
+
+    // F = tipo diario
+    const F = TIN / daysInYear(i === 0 ? fy0 : S_prev.getFullYear());
+
+    // K = intereses
+    let K;
+    if (i === 0) {
+      K = I_fixed * F * D;
+    } else {
+      const cond = I_row_prev - (M_prev - K_prev - L_prev);
+      K = cond > 0
+        ? Math.max(0, (H_prev - K_prev - L_prev) * F * D - (M_prev - K_prev - L_prev) * F * E)
+        : 0;
+    }
+
+    const L = 0;
+    const M = Math.min(cuota, I_prev + K);
+    const J = Math.min(Math.max(M - K, 0), I_prev);
+    const H = i === 0 ? I_fixed + K : H_prev - J;
+    const I_new = Math.max(I_prev - J, 0);
+    const N = J > 0 ? M : 0;
+
+    rows.push({ D, E, F, H, I_row: I_prev, J, K, L: 0, M, N, I_new });
+
+    K_prev = K; L_prev = 0; M_prev = M; H_prev = H;
+    I_row_prev = I_prev;
+    I_prev = I_new;
+
+    S_prev = S_curr; T_prev = T_curr;
+    const { y: ny, m: nm } = addMonths(S_curr.getFullYear(), S_curr.getMonth() + 1, 1);
+    S_curr = new Date(ny, nm - 1, 1);
+    T_curr = eom(ny, nm);
+
+    const { y: uy, m: um } = addMonths(U_prev.getFullYear(), U_prev.getMonth() + 1, 1);
+    U_prev = new Date(uy, um - 1, 1);
+  }
+
+  return rows;
+}
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+
+const inputCuota   = document.getElementById('cuota');
+const inputImporte = document.getElementById('importe');
+const resultsEl    = document.getElementById('results');
+const errorEl      = document.getElementById('error');
+const summaryEl    = document.getElementById('summary');
+
+function fmt(n, dec = 2) {
+  return n.toLocaleString('es-ES', {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec
+  });
+}
+
+function render() {
+  const cuota   = parseFloat(inputCuota.value);
+  const importe = parseFloat(inputImporte.value);
+  errorEl.textContent = '';
+
+  if (!cuota || !importe || isNaN(cuota) || isNaN(importe) || cuota < 1 || importe < 1) {
+    resultsEl.classList.remove('visible');
+    return;
+  }
+
+  const rows   = simulate(cuota, importe);
+  const active = rows.filter(r => r.N > 0);
+
+  if (active.length === 0) {
+    errorEl.textContent = 'La cuota no cubre los intereses del primer mes.';
+    resultsEl.classList.remove('visible');
+    return;
+  }
+
+  const regular   = active.filter(r => Math.abs(r.M - cuota) < 0.005);
+  const finalRows = active.filter(r => Math.abs(r.M - cuota) >= 0.005);
+  const cuotaFinal = finalRows.length > 0 ? finalRows[finalRows.length - 1].M : null;
+
+  const totalIntereses = rows.reduce((s, r) => s + r.K, 0);
+  const totalPago      = rows.reduce((s, r) => s + r.M, 0);
+
+  document.getElementById('r-cuotas').textContent = active.length;
+
+  document.getElementById('r-regular').innerHTML =
+    `${fmt(cuota)} <small>€</small>`;
+
+  if (cuotaFinal !== null && cuotaFinal > 0.005) {
+    document.getElementById('r-final').innerHTML =
+      `${fmt(cuotaFinal)} <small>€</small>`;
+  } else {
+    document.getElementById('r-final').innerHTML =
+      `<span class="muted">ninguna</span>`;
+  }
+
+  document.getElementById('r-intereses').innerHTML =
+    `${fmt(totalIntereses)} <small>€</small>`;
+
+  document.getElementById('r-total').innerHTML =
+    `${fmt(totalPago)} <small>€</small>`;
+
+  if (cuotaFinal !== null && cuotaFinal > 0.005) {
+    summaryEl.textContent =
+      `${regular.length} cuota${regular.length !== 1 ? 's' : ''} de ${fmt(cuota)} € ` +
+      `y una cuota final (nº ${active.length}) de ${fmt(cuotaFinal)} €.`;
+  } else {
+    summaryEl.textContent =
+      `${active.length} cuota${active.length !== 1 ? 's' : ''} de ${fmt(cuota)} €.`;
+  }
+
+  resultsEl.classList.add('visible');
+}
+
+let debounce;
+function onInput() {
+  clearTimeout(debounce);
+  debounce = setTimeout(render, 200);
+}
+
+inputCuota.addEventListener('input', onInput);
+inputImporte.addEventListener('input', onInput);
+</script>
+</body>
+</html>
