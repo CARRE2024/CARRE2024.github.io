@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Odisea · Generador de archivos .js</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1420;
+    --panel:#171d2b;
+    --panel-light:#1f2637;
+    --border:#2a3347;
+    --text:#e7ebf3;
+    --muted:#8b95ab;
+    --accent:#5b8cff;
+    --accent-2:#7fd8a0;
+    --warn:#e8b04b;
+    --error:#f16d6d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 700px at 20% -10%, #1c2740 0%, var(--bg) 55%);
+    color:var(--text);
+    min-height:100vh;
+    padding:40px 20px 80px;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+  h1{font-size:1.7rem;margin:0 0 6px;letter-spacing:.2px;}
+  .sub{color:var(--muted);margin:0 0 30px;font-size:.95rem;line-height:1.5;}
+
+  .dropzone{
+    border:2px dashed var(--border);
+    border-radius:16px;
+    background:var(--panel);
+    padding:50px 20px;
+    text-align:center;
+    transition:.15s ease;
+    cursor:pointer;
+  }
+  .dropzone.drag{
+    border-color:var(--accent);
+    background:var(--panel-light);
+    box-shadow:0 0 0 4px rgba(91,140,255,.12);
+  }
+  .dropzone .icon{font-size:2.4rem;margin-bottom:10px;}
+  .dropzone .main{font-size:1.05rem;font-weight:600;}
+  .dropzone .hint{color:var(--muted);font-size:.85rem;margin-top:6px;}
+  input[type=file]{display:none;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:10px;
+    margin-top:26px;
+  }
+  .cat-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .cat-card h3{margin:0 0 10px;font-size:.9rem;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;}
+  .file-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:.85rem;
+    padding:5px 0;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex:none;}
+  .dot.ok{background:var(--accent-2);}
+  .dot.missing{background:var(--border);}
+  .file-row.ok{color:var(--text);}
+  .file-row.missing{color:var(--muted);}
+
+  .actions{
+    margin-top:28px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  button.primary{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:12px 22px;
+    border-radius:10px;
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  button.primary:disabled{
+    background:var(--panel-light);
+    color:var(--muted);
+    cursor:not-allowed;
+  }
+  button.primary:not(:disabled):hover{filter:brightness(1.08);}
+  button.secondary{
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--border);
+    padding:11px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:.85rem;
+  }
+  button.upload{
+    background:linear-gradient(145deg, #e2703a, #e8b04b);
+    color:#fff;
+    border:none;
+    padding:12px 22px;
+    border-radius:10px;
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  button.upload:hover{filter:brightness(1.08);}
+  button.upload:active{transform:translateY(1px);}
+  button.secondary:hover{color:var(--text);border-color:var(--accent);}
+
+  .log{
+    margin-top:26px;
+    background:#0b0f18;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px 18px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.82rem;
+    line-height:1.65;
+    max-height:340px;
+    overflow-y:auto;
+    white-space:pre-wrap;
+  }
+  .log .line-ok{color:var(--accent-2);}
+  .log .line-warn{color:var(--warn);}
+  .log .line-err{color:var(--error);}
+  .log .line-muted{color:var(--muted);}
+  .log:empty{display:none;}
+
+  footer{margin-top:30px;color:var(--muted);font-size:.78rem;line-height:1.6;}
+  code{background:var(--panel-light);padding:1px 6px;border-radius:5px;font-size:.85em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏝️ Odisea · Generador de .js</h1>
+  <p class="sub">
+    Arrastra aquí los 10 Excel (los de cada categoría de gran electrodoméstico/imagen/sonido
+    y sus correspondientes de PRECIO) — a la vez o en varias tandas — y pulsa <strong>Generar</strong>.
+    La herramienta identifica cada archivo <strong>por su contenido</strong> (no por el nombre del
+    fichero), así que puedes arrastrarlos aunque se llamen de otra forma.
+    Se descargarán automáticamente <code>television.js</code>, <code>gae.js</code>, <code>ofimatica.js</code>,
+    <code>pae.js</code>, <code>sonido.js</code> y <code>fechaactual.js</code>. Si el navegador pregunta si
+    permites varias descargas de esta página, elige <strong>"Permitir"</strong> para que no se corte ninguna.
+  </p>
+
+  <div class="dropzone" id="dropzone">
+    <div class="icon">📂</div>
+    <div class="main">Suelta aquí los archivos Excel</div>
+    <div class="hint">o haz clic para seleccionarlos (puedes soltarlos todos juntos o de uno en uno)</div>
+    <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="actions">
+    <button class="primary" id="genBtn" disabled>Generar y descargar los 6 archivos</button>
+    <button class="upload" id="uploadBtn" onclick="window.location.href='https://github.com/CARRE2024/CARRE2024.github.io'">Subir</button>
+    <button class="secondary" id="resetBtn">Vaciar</button>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <footer>
+    Todo el procesamiento ocurre en tu navegador (no se sube ningún archivo a ningún servidor).
+    El descuento de la columna K se interpreta como <strong>porcentaje</strong> si la celda de Excel
+    tiene formato "%", o como <strong>importe en €</strong> en caso contrario — revisa el resultado
+    si alguna categoría usa descuentos fijos en euros.
+  </footer>
+</div>
+
+<script>
+const CATEGORIES = [
+  { key: "television", label: "TELEVISION", match: /TELEVISION/i },
+  { key: "gae",         label: "GAE",         match: /GAE/i },
+  { key: "ofimatica",   label: "OFIMATICA",   match: /OFIMATICA/i },
+  { key: "pae",         label: "PAE",         match: /\bPAE\b|PAE(?!C)/i },
+  { key: "sonido",      label: "SONIDO",      match: /SONIDO/i },
+];
+
+// state: files[catKey] = { base: File|null, precio: File|null }
+const files = {};
+CATEGORIES.forEach(c => files[c.key] = { base: null, precio: null });
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const grid = document.getElementById('grid');
+const genBtn = document.getElementById('genBtn');
+const resetBtn = document.getElementById('resetBtn');
+const logEl = document.getElementById('log');
+
+function log(msg, cls) {
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = msg;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// Nombre de departamento tal como aparece dentro del propio Excel
+// (columna C en los archivos "base", columna D en los archivos "PRECIO")
+const DEPT_MAP = {
+  'IMAGEN': 'television',
+  'GRAN APARATO': 'gae',
+  'OFIMATICA': 'ofimatica',
+  'P.A.E': 'pae',
+  'SONIDO': 'sonido',
+};
+
+function classifyByName(filename) {
+  const name = filename.toUpperCase().replace(/\.(XLSX|XLS)$/,'');
+  const isPrecio = /PRECIO/.test(name);
+  const sorted = [...CATEGORIES].sort((a,b)=>b.label.length - a.label.length);
+  for (const cat of sorted) {
+    if (name.includes(cat.label)) {
+      return { catKey: cat.key, type: isPrecio ? 'precio' : 'base' };
+    }
+  }
+  return null;
+}
+
+// Detección por contenido: mira el ancho real de la hoja (los PRECIO tienen
+// muchísimas más columnas, hasta la BC) y el nombre de departamento que
+// aparece en la columna C (base) o D (precio).
+function classifyByContent(ws) {
+  if (!ws || !ws['!ref']) return null;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const width = range.e.c - range.s.c + 1;
+  const isPrecio = width > 20; // base: ~11 cols (A-K) · precio: ~55 cols (A-BC)
+  const deptCol = isPrecio ? colIdx('D') : colIdx('C');
+
+  const maxScan = Math.min(range.e.r, range.s.r + 10);
+  for (let r = range.s.r; r <= maxScan; r++) {
+    const cell = ws[XLSX.utils.encode_cell({ r, c: deptCol })];
+    if (!cell || cell.v == null) continue;
+    const norm = String(cell.v).trim().toUpperCase();
+    if (DEPT_MAP[norm]) {
+      return { catKey: DEPT_MAP[norm], type: isPrecio ? 'precio' : 'base' };
+    }
+  }
+  return null;
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    const st = files[cat.key];
+    card.innerHTML = `
+      <h3>${cat.label}</h3>
+      <div class="file-row ${st.base ? 'ok' : 'missing'}">
+        <span class="dot ${st.base ? 'ok' : 'missing'}"></span>
+        Archivo base ${st.base ? '— ' + st.base.name : '(falta)'}
+      </div>
+      <div class="file-row ${st.precio ? 'ok' : 'missing'}">
+        <span class="dot ${st.precio ? 'ok' : 'missing'}"></span>
+        Archivo PRECIO ${st.precio ? '— ' + st.precio.name : '(falta)'}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  const anyReady = CATEGORIES.some(c => files[c.key].base && files[c.key].precio);
+  genBtn.disabled = !anyReady;
+}
+
+async function handleFiles(fileList) {
+  for (const f of [...fileList]) {
+    if (!/\.(xlsx|xls)$/i.test(f.name)) continue;
+    try {
+      const wb = await readWorkbook(f);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+
+      let result = classifyByContent(ws);
+      let via = 'contenido';
+      if (!result) {
+        result = classifyByName(f.name);
+        via = 'nombre de archivo';
+      }
+      if (!result) {
+        log(`⚠ No reconozco a qué categoría pertenece: ${f.name}`, 'line-warn');
+        continue;
+      }
+      const catLabel = CATEGORIES.find(c => c.key === result.catKey).label;
+      files[result.catKey][result.type] = { name: f.name, ws };
+      log(`✓ ${f.name} → ${catLabel} (${result.type === 'precio' ? 'PRECIO' : 'base'}) — detectado por ${via}`, 'line-ok');
+    } catch (err) {
+      log(`✖ ${f.name}: no se pudo leer — ${err.message}`, 'line-err');
+    }
+  }
+  renderGrid();
+}
+
+['dragenter','dragover'].forEach(evt => {
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation();
+    dropzone.classList.add('drag');
+  });
+});
+['dragleave','drop'].forEach(evt => {
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation();
+    dropzone.classList.remove('drag');
+  });
+});
+dropzone.addEventListener('drop', e => {
+  handleFiles(e.dataTransfer.files);
+});
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+resetBtn.addEventListener('click', () => {
+  CATEGORIES.forEach(c => files[c.key] = { base: null, precio: null });
+  logEl.innerHTML = '';
+  fileInput.value = '';
+  renderGrid();
+});
+
+renderGrid();
+
+// ---------- Lógica de combinación ----------
+
+function colIdx(letter) {
+  // 'A' -> 0, 'J' -> 9, 'N' -> 13, 'V' -> 21, 'AV' -> 47 ...
+  let n = 0;
+  for (const ch of letter) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+}
+
+const COL = {
+  fechaIni: colIdx('A'), fechaFin: colIdx('B'), dept: colIdx('C'),
+  categoria: colIdx('D'), subcategoria: colIdx('E'), descripcion: colIdx('F'),
+  codigo: colIdx('G'), ean: colIdx('H'), todas: colIdx('I'), todos: colIdx('J'),
+  descuento: colIdx('K'),
+};
+const PCOL = {
+  ean: colIdx('J'), precio: colIdx('N'), comentario: colIdx('V'), stock: colIdx('AV'),
+};
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function formatDate(v) {
+  if (v instanceof Date) {
+    return `${pad2(v.getUTCDate())}/${pad2(v.getUTCMonth()+1)}/${v.getUTCFullYear()}`;
+  }
+  if (typeof v === 'number') {
+    // fallback: Excel serial date
+    const d = XLSX.SSF.parse_date_code(v);
+    if (d) return `${pad2(d.d)}/${pad2(d.m)}/${d.y}`;
+  }
+  return v == null ? '' : String(v);
+}
+
+function formatDescuento(value, fmt) {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value !== 'number') return String(value);
+  const f = fmt || '';
+  if (f.indexOf('%') !== -1) {
+    return Math.round(value * 100) + '%';
+  }
+  if (f.indexOf('€') !== -1 || f.indexOf('"€"') !== -1) {
+    return Math.round(value) + '€';
+  }
+  // sin formato detectado: heurística (fracción -> %, entero -> €)
+  return value < 1 ? Math.round(value * 100) + '%' : Math.round(value) + '€';
+}
+
+function csvField(v) {
+  const s = (v === null || v === undefined) ? '' : String(v);
+  if (/[;"\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function readWorkbook(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true, cellNF: true });
+        resolve(wb);
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function sheetRowsRaw(ws) {
+  // devuelve array de filas, cada fila es array de celdas {v, z} usando el rango real de la hoja
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const rows = [];
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const row = [];
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      const cell = ws[addr];
+      row.push(cell ? { v: cell.v, z: cell.z } : { v: undefined, z: undefined });
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+function buildPrecioMap(ws) {
+  const rows = sheetRowsRaw(ws);
+  const map = new Map();
+  for (const row of rows) {
+    const ean = row[PCOL.ean] ? row[PCOL.ean].v : undefined;
+    if (ean === undefined || ean === null || ean === '') continue;
+    const key = String(ean).trim();
+    if (map.has(key)) continue; // primera coincidencia, como VLOOKUP
+    map.set(key, {
+      precio: row[PCOL.precio] ? row[PCOL.precio].v : '',
+      stock: row[PCOL.stock] ? row[PCOL.stock].v : '',
+      comentario: row[PCOL.comentario] ? row[PCOL.comentario].v : '',
+    });
+  }
+  return map;
+}
+
+function buildCategoryLines(ws, precioMap, catLabel) {
+  const rows = sheetRowsRaw(ws);
+  const lines = [];
+  let sinMatch = 0;
+  for (const row of rows) {
+    const ean = row[COL.ean] ? row[COL.ean].v : '';
+    const key = ean === undefined || ean === null ? '' : String(ean).trim();
+    const p = precioMap.get(key);
+    if (!p) sinMatch++;
+
+    const fields = [
+      formatDate(row[COL.fechaIni] ? row[COL.fechaIni].v : ''),
+      formatDate(row[COL.fechaFin] ? row[COL.fechaFin].v : ''),
+      csvField(row[COL.dept] ? row[COL.dept].v : ''),
+      csvField(row[COL.categoria] ? row[COL.categoria].v : ''),
+      csvField(row[COL.subcategoria] ? row[COL.subcategoria].v : ''),
+      csvField(row[COL.descripcion] ? row[COL.descripcion].v : ''),
+      csvField(row[COL.codigo] ? row[COL.codigo].v : ''),
+      csvField(ean),
+      csvField(row[COL.todas] ? row[COL.todas].v : ''),
+      csvField(row[COL.todos] ? row[COL.todos].v : ''),
+      formatDescuento(row[COL.descuento] ? row[COL.descuento].v : '', row[COL.descuento] ? row[COL.descuento].z : ''),
+      csvField(p ? p.precio : ''),
+      csvField(p ? p.stock : ''),
+      csvField(p ? p.comentario : ''),
+    ];
+    lines.push(fields.join(';'));
+  }
+  return { lines, total: rows.length, sinMatch };
+}
+
+function downloadJs(filename, content) {
+  const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+const MESES_ES = [
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre',
+];
+
+function buildFechaActualJs() {
+  const hoy = new Date();
+  const dia = hoy.getDate();
+  const mes = MESES_ES[hoy.getMonth()];
+  return `const fecha = "Actualizado a ${dia} de ${mes}";`;
+}
+
+genBtn.addEventListener('click', async () => {
+  genBtn.disabled = true;
+  logEl.innerHTML = '';
+  log('Procesando…', 'line-muted');
+
+  let idx = 0;
+  const DELAY_MS = 600; // margen entre descargas para que el navegador no las bloquee
+
+  // fechaactual.js se descarga primero: si el navegador limita cuántas
+  // descargas automáticas permite seguidas, así no se queda fuera.
+  const fechaContent = buildFechaActualJs();
+  setTimeout(() => downloadJs('fechaactual.js', fechaContent), idx * DELAY_MS);
+  log(`✔ fechaactual.js: ${fechaContent.match(/"([^"]+)"/)[1]}`, 'line-ok');
+  idx++;
+
+  let generados = 0;
+  for (const cat of CATEGORIES) {
+    const st = files[cat.key];
+    if (!st.base || !st.precio) {
+      log(`— ${cat.label}: omitido (faltan archivos)`, 'line-muted');
+      continue;
+    }
+    try {
+      const wsBase = st.base.ws;
+      const wsPrecio = st.precio.ws;
+
+      const precioMap = buildPrecioMap(wsPrecio);
+      const { lines, total, sinMatch } = buildCategoryLines(wsBase, precioMap, cat.label);
+
+      const filename = cat.key + '.js';
+      const content = 'const data = `' + lines.join('\r\n') + '`;';
+      setTimeout(() => downloadJs(filename, content), idx * DELAY_MS);
+      idx++;
+      generados++;
+
+      log(`✔ ${filename}: ${total} filas` + (sinMatch ? ` (${sinMatch} sin precio/stock)` : ''), 'line-ok');
+    } catch (err) {
+      log(`✖ ${cat.label}: error — ${err.message}`, 'line-err');
+    }
+  }
+
+  if (generados === 0) {
+    log('No hay ninguna categoría completa (base + PRECIO) para generar.', 'line-warn');
+  }
+
+  log('Listo. Revisa las descargas de tu navegador (si aparece un aviso de "varias descargas", permítelo).', 'line-ok');
+  genBtn.disabled = false;
+});
+
+</script>
+</body>
+</html>
