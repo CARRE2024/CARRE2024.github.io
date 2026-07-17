@@ -332,6 +332,7 @@
             // Si ya se validó la contraseña en esta pestaña/sesión, desbloquear directamente
             if (sessionStorage.getItem('crt_unlocked') === 'true') {
                 body.classList.remove('locked');
+                document.getElementById('lockScreen').style.display = 'none';
             }
 
             form.addEventListener('submit', function (e) {
@@ -339,6 +340,7 @@
                 if (typeof CRT_PASSWORD !== 'undefined' && input.value === CRT_PASSWORD) {
                     sessionStorage.setItem('crt_unlocked', 'true');
                     body.classList.remove('locked');
+                    document.getElementById('lockScreen').style.display = 'none';
                 } else {
                     error.textContent = 'Contraseña incorrecta';
                     input.value = '';
