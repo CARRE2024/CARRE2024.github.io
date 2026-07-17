@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Responsive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #250a6e 0%, #16473a 50%, #2d0417 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            position: relative;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .button {
+            margin: 15px;
+            text-decoration: none;
+            filter: brightness(0) invert(1);
+            /* Convierte los iconos a blanco */
+            transition: all 0.3s ease;
+        }
+
+        .button img {
+            width: 100px;
+            height: auto;
+            transition: transform 0.2s, opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .button:hover {
+            filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
+        }
+
+        .button:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Animación de aparición */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Aplicamos la animación con retrasos escalonados */
+        .button:nth-child(1) img {
+            animation: fadeIn 0.5s ease-in-out 0.2s forwards;
+        }
+
+        .button:nth-child(2) img {
+            animation: fadeIn 0.5s ease-in-out 0.4s forwards;
+        }
+
+        .button:nth-child(3) img {
+            animation: fadeIn 0.5s ease-in-out 0.6s forwards;
+        }
+
+        .button:nth-child(4) img {
+            animation: fadeIn 0.5s ease-in-out 0.8s forwards;
+        }
+
+        .button:nth-child(5) img {
+            animation: fadeIn 0.5s ease-in-out 1s forwards;
+        }
+
+        .button:nth-child(6) img {
+            animation: fadeIn 0.5s ease-in-out 1.2s forwards;
+        }
+
+        .fecha-texto,
+        .version-texto {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .fecha-texto {
+            top: 15px;
+            right: 20px;
+        }
+
+        .version-texto {
+            top: 15px;
+            left: 20px;
+            text-decoration: none;
+            /* Elimina el subrayado */
+            color: rgba(255, 255, 255, 0.8) !important;
+            /* Fuerza el color blanco */
+            transition: none !important;
+            /* Elimina cualquier transición */
+        }
+
+        .version-texto2 {
+            text-decoration: none;
+            /* Elimina el subrayado */
+            color: rgba(255, 255, 255, 0.8) !important;
+            /* Fuerza el color blanco */
+            transition: none !important;
+            /* Elimina cualquier transición */
+        }
+
+        .version-texto:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+            /* Mantiene el mismo color al hover */
+            text-decoration: none !important;
+            /* Asegura que no aparezca subrayado al hover */
+        }
+
+        .creditos-texto {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            bottom: 15px;
+            right: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .button {
+                width: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        }
+
+        /* Pantalla de bloqueo por contraseña */
+        #lockScreen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #250a6e 0%, #16473a 50%, #2d0417 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        #lockScreen h1 {
+            font-size: 20px;
+            font-weight: 400;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+        }
+
+        #lockForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        #lockPasswordWrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        #lockPassword {
+            width: 100%;
+            padding: 10px 42px 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #lockPassword::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        #toggleLockPassword {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        #toggleLockPassword:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        #toggleLockPassword svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #lockButton {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #16473a;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        #lockButton:hover {
+            background: #ffffff;
+        }
+
+        #lockError {
+            color: #ff9d9d;
+            font-size: 13px;
+            min-height: 16px;
+        }
+
+        body.locked > *:not(#lockScreen) {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="locked">
+    <div id="lockScreen">
+        <h1>Acceso restringido</h1>
+        <form id="lockForm">
+            <div id="lockPasswordWrapper">
+                <input type="password" id="lockPassword" placeholder="Contraseña" autocomplete="off" autofocus>
+                <button type="button" id="toggleLockPassword" aria-label="Mostrar contraseña">
+                    <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
+            <button type="submit" id="lockButton">Entrar</button>
+            <div id="lockError"></div>
+        </form>
+    </div>
+
+    <a href="tutorial.mp4" class="version-texto">VERSION 23</a>
+    <div class="fecha-texto" id="fechaTexto"></div>
+
+    <div class="container">
+        <a href="gae.html" class="button">
+            <img src="gae.png" alt="Gae">
+        </a>
+        <a href="television.html" class="button">
+            <img src="television.png" alt="Television">
+        </a>
+        <a href="ofimatica.html" class="button">
+            <img src="ofimatica.png" alt="Ofimática">
+        </a>
+        <a href="pae.html" class="button">
+            <img src="ac_animated2.gif" alt="Pae">
+        </a>
+        <!-- Nuevo botón Sonido -->
+        <a href="sonido.html" class="button">
+            <img src="sonido.png" alt="Sonido">
+        </a>
+        <a href="calculadora.html" class="button">
+            <img src="calculadora.png" alt="Calculadora">
+        </a>
+    </div>
+
+    <div class="creditos-texto"><a href="d5.html" class="version-texto2">seguimiento anticipos</a></div>
+
+    <script src="crt.js"></script>
+    <script src="fechaactual.js"></script>
+    <script>
+        document.getElementById('fechaTexto').textContent = fecha;
+
+        (function () {
+            var body = document.body;
+            var form = document.getElementById('lockForm');
+            var input = document.getElementById('lockPassword');
+            var error = document.getElementById('lockError');
+
+            var toggleBtn = document.getElementById('toggleLockPassword');
+            var eyeIcon = document.getElementById('eyeIcon');
+
+            toggleBtn.addEventListener('click', function () {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    eyeIcon.innerHTML = '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                } else {
+                    input.type = 'password';
+                    eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                }
+            });
+
+            // Si ya se validó la contraseña en esta pestaña/sesión, desbloquear directamente
+            if (sessionStorage.getItem('crt_unlocked') === 'true') {
+                body.classList.remove('locked');
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (typeof CRT_PASSWORD !== 'undefined' && input.value === CRT_PASSWORD) {
+                    sessionStorage.setItem('crt_unlocked', 'true');
+                    body.classList.remove('locked');
+                } else {
+                    error.textContent = 'Contraseña incorrecta';
+                    input.value = '';
+                    input.focus();
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

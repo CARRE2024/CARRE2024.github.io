@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Tickets y Anticipos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #calendar, #cajaSelection, #creditDialog {
+            margin-top: 20px;
+            display: none;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .ticket {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .ticket:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+        .ticket-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .ticket-code {
+            font-family: monospace;
+            background-color: #eee;
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            margin-top: 10px;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .caja-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .caja-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .credit-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .credit-btn {
+            padding: 15px;
+            font-size: 16px;
+            flex: 1;
+            max-width: 150px;
+        }
+        .no-btn {
+            background-color: #f44336;
+        }
+        .no-btn:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Seguimiento de Tickets y Anticipos</h1>
+        
+        <input type="number" id="ticketNumber" placeholder="Ingrese número de ticket (3 cifras)" min="100" max="999">
+        
+        <button id="saveBtn">Guardar</button>
+        <button id="trackBtn">Seguimiento de tickets y anticipos</button>
+        
+        <div id="cajaSelection" style="display: none;">
+            <h3>Seleccione la caja:</h3>
+            <div class="caja-buttons">
+                <button class="caja-btn" data-caja="53">Caja 53</button>
+                <button class="caja-btn" data-caja="54">Caja 54</button>
+            </div>
+        </div>
+        
+        <div id="calendar" style="display: none;">
+            <h3>Seleccione fecha de entrega:</h3>
+            <input type="date" id="deliveryDate">
+            <button id="confirmDateBtn">Confirmar Fecha</button>
+        </div>
+        
+        <div id="creditDialog" style="display: none;">
+            <h3>¿Es un crédito?</h3>
+            <div class="credit-buttons">
+                <button id="yesCreditBtn" class="credit-btn">Sí</button>
+                <button id="noCreditBtn" class="credit-btn no-btn">No</button>
+            </div>
+        </div>
+        
+        <div id="ticketsList" style="display: none;">
+            <h2>Tickets Registrados</h2>
+            <div id="ticketsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ticketNumberInput = document.getElementById('ticketNumber');
+            const saveBtn = document.getElementById('saveBtn');
+            const trackBtn = document.getElementById('trackBtn');
+            const cajaSelectionDiv = document.getElementById('cajaSelection');
+            const cajaButtons = document.querySelectorAll('.caja-btn');
+            const calendarDiv = document.getElementById('calendar');
+            const deliveryDateInput = document.getElementById('deliveryDate');
+            const confirmDateBtn = document.getElementById('confirmDateBtn');
+            const creditDialog = document.getElementById('creditDialog');
+            const yesCreditBtn = document.getElementById('yesCreditBtn');
+            const noCreditBtn = document.getElementById('noCreditBtn');
+            const ticketsListDiv = document.getElementById('ticketsList');
+            const ticketsContainer = document.getElementById('ticketsContainer');
+            
+            let currentTicketNumber = null;
+            let currentCaja = null;
+            let currentDeliveryDate = null;
+            let isCredit = false;
+            
+            // Validar que solo se ingresen números de 3 cifras
+            ticketNumberInput.addEventListener('input', function() {
+                if (this.value.length > 3) {
+                    this.value = this.value.slice(0, 3);
+                }
+            });
+            
+            saveBtn.addEventListener('click', function() {
+                const ticketNumber = ticketNumberInput.value.trim();
+                
+                if (ticketNumber.length !== 3 || isNaN(ticketNumber)) {
+                    alert('Por favor ingrese un número de ticket válido de 3 cifras.');
+                    return;
+                }
+                
+                currentTicketNumber = ticketNumber;
+                cajaSelectionDiv.style.display = 'block';
+                calendarDiv.style.display = 'none';
+                ticketsListDiv.style.display = 'none';
+                creditDialog.style.display = 'none';
+            });
+            
+            // Event listeners para los botones de caja
+            cajaButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    currentCaja = this.getAttribute('data-caja');
+                    cajaSelectionDiv.style.display = 'none';
+                    calendarDiv.style.display = 'block';
+                    creditDialog.style.display = 'none';
+                    
+                    // Establecer la fecha mínima como hoy
+                    const today = new Date().toISOString().split('T')[0];
+                    deliveryDateInput.min = today;
+                    deliveryDateInput.value = today;
+                });
+            });
+            
+            trackBtn.addEventListener('click', function() {
+                displayTickets();
+                cajaSelectionDiv.style.display = 'none';
+                calendarDiv.style.display = 'none';
+                creditDialog.style.display = 'none';
+            });
+            
+            confirmDateBtn.addEventListener('click', function() {
+                const deliveryDate = deliveryDateInput.value;
+                
+                if (!deliveryDate) {
+                    alert('Por favor seleccione una fecha de entrega.');
+                    return;
+                }
+                
+                currentDeliveryDate = deliveryDate;
+                calendarDiv.style.display = 'none';
+                creditDialog.style.display = 'block';
+            });
+            
+            yesCreditBtn.addEventListener('click', function() {
+                isCredit = true;
+                saveTicketData();
+            });
+            
+            noCreditBtn.addEventListener('click', function() {
+                isCredit = false;
+                saveTicketData();
+            });
+            
+            function saveTicketData() {
+                creditDialog.style.display = 'none';
+                saveTicket(currentTicketNumber, currentCaja, currentDeliveryDate, isCredit);
+                ticketNumberInput.value = '';
+                currentTicketNumber = null;
+                currentCaja = null;
+                currentDeliveryDate = null;
+                isCredit = false;
+                
+                // Mostrar los tickets actualizados
+                displayTickets();
+            }
+            
+            function saveTicket(ticketNumber, caja, deliveryDate, isCredit) {
+                const today = new Date();
+                const todayFormatted = formatDate(today);
+                const todayFormattedForCode = formatDateForCode(today);
+                
+                const deliveryDateObj = new Date(deliveryDate);
+                const isToday = isSameDay(today, deliveryDateObj);
+                const settlementDate = calculateSettlementDate(deliveryDateObj, isToday);
+                const settlementDateFormatted = formatDate(settlementDate);
+                
+                // Generar el código especial
+                const ticketCode = generateTicketCode(todayFormattedForCode, caja, ticketNumber);
+                
+                // Añadir "CRÉDITO" al código si es un crédito
+                const ticketType = isCredit ? "CRÉDITO" : "";
+                
+                const ticket = {
+                    number: ticketNumber,
+                    caja: caja,
+                    creationDate: todayFormatted,
+                    deliveryDate: formatDate(deliveryDateObj),
+                    settlementDate: settlementDateFormatted,
+                    ticketCode: ticketCode,
+                    type: ticketType
+                };
+                
+                // Obtener tickets existentes o crear un nuevo array
+                const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+                
+                // Verificar si el ticket ya existe
+                const existingIndex = tickets.findIndex(t => t.number === ticketNumber);
+                if (existingIndex !== -1) {
+                    tickets[existingIndex] = ticket; // Actualizar ticket existente
+                } else {
+                    tickets.push(ticket); // Agregar nuevo ticket
+                }
+                
+                // Guardar en localStorage
+                localStorage.setItem('tickets', JSON.stringify(tickets));
+            }
+            
+            function isSameDay(date1, date2) {
+                return date1.getFullYear() === date2.getFullYear() &&
+                       date1.getMonth() === date2.getMonth() &&
+                       date1.getDate() === date2.getDate();
+            }
+            
+            function calculateSettlementDate(deliveryDate, isToday) {
+                const settlementDate = new Date(deliveryDate);
+                const dayOfWeek = deliveryDate.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+                
+                if (isToday) {
+                    // Si la entrega es hoy
+                    if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Lunes a Viernes
+                        settlementDate.setDate(settlementDate.getDate() + 1);
+                    } else if (dayOfWeek === 6) { // Sábado
+                        settlementDate.setDate(settlementDate.getDate() + 2); // Lunes
+                    } else { // Domingo
+                        settlementDate.setDate(settlementDate.getDate() + 1); // Lunes
+                    }
+                } else {
+                    // Si la entrega no es hoy (mantenemos la lógica original)
+                    if (dayOfWeek >= 1 && dayOfWeek <= 3) { // Lunes, Martes, Miércoles
+                        settlementDate.setDate(settlementDate.getDate() + 2);
+                    } else if (dayOfWeek === 4 || dayOfWeek === 5) { // Jueves o Viernes
+                        settlementDate.setDate(settlementDate.getDate() + (dayOfWeek === 4 ? 2 : 3));
+                    } else { // Sábado o Domingo
+                        settlementDate.setDate(settlementDate.getDate() + 3);
+                    }
+                }
+                
+                return settlementDate;
+            }
+            
+            function generateTicketCode(dateStr, caja, ticketNumber) {
+                // Formato: 006F(FECHADETIKET)0(CAJA)000NUMERO DE TICKET
+                const paddedTicketNumber = ticketNumber.padStart(3, '0');
+                return `006F${dateStr}0${caja}000${paddedTicketNumber}`;
+            }
+            
+            function formatDateForCode(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = String(date.getFullYear()).slice(-2);
+                return `${day}${month}${year}`;
+            }
+            
+            function formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            
+            function displayTickets() {
+                const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+                
+                if (tickets.length === 0) {
+                    ticketsContainer.innerHTML = '<p>No hay tickets registrados.</p>';
+                } else {
+                    ticketsContainer.innerHTML = '';
+                    tickets.forEach(ticket => {
+                        const ticketElement = document.createElement('div');
+                        ticketElement.className = 'ticket';
+                        
+                        const ticketInfo = document.createElement('div');
+                        ticketInfo.className = 'ticket-info';
+                        ticketInfo.innerHTML = `
+                            <div>
+                                <strong>Número de ticket:</strong> ${ticket.number}<br>
+                                <strong>Caja:</strong> ${ticket.caja}<br>
+                                <strong>Fecha de ticket:</strong> ${ticket.creationDate}<br>
+                                <strong>Fecha aproximada de liquidación:</strong> ${ticket.settlementDate}
+                                ${ticket.type ? `<br><strong>Tipo:</strong> ${ticket.type}` : ''}
+                            </div>
+                            <div>
+                                <strong>Fecha de entrega:</strong> ${ticket.deliveryDate}
+                            </div>
+                        `;
+                        
+                        const ticketCodeElement = document.createElement('div');
+                        ticketCodeElement.className = 'ticket-code';
+                        ticketCodeElement.textContent = `${ticket.creationDate}   ${ticket.settlementDate}   ${ticket.creationDate}     ${ticket.ticketCode} ${ticket.type}`;
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.textContent = 'Eliminar Ticket';
+                        deleteBtn.style.display = 'none';
+                        
+                        deleteBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            if (confirm(`¿Está seguro que desea eliminar el ticket ${ticket.number}?`)) {
+                                deleteTicket(ticket.number);
+                            }
+                        });
+                        
+                        ticketElement.addEventListener('click', function() {
+                            deleteBtn.style.display = deleteBtn.style.display === 'none' ? 'block' : 'none';
+                        });
+                        
+                        ticketElement.appendChild(ticketInfo);
+                        ticketElement.appendChild(ticketCodeElement);
+                        ticketElement.appendChild(deleteBtn);
+                        ticketsContainer.appendChild(ticketElement);
+                    });
+                }
+                
+                ticketsListDiv.style.display = 'block';
+            }
+            
+            function deleteTicket(ticketNumber) {
+                const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+                const updatedTickets = tickets.filter(ticket => ticket.number !== ticketNumber);
+                localStorage.setItem('tickets', JSON.stringify(updatedTickets));
+                displayTickets();
+            }
+            
+            // Mostrar la fecha actual en el campo de fecha
+            const today = new Date().toISOString().split('T')[0];
+            deliveryDateInput.min = today;
+            deliveryDateInput.value = today;
+        });
+    </script>
+</body>
+</html>
