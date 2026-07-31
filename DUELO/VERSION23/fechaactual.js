@@ -1,1 +1,1 @@
-const fecha = "Actualizado a 28 de Julio";
+const fecha = "Actualizado a 31 de Julio";
