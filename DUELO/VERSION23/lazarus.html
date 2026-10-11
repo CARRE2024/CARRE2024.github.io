@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Buscador</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Buscador">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root { --ink:#1a1a1a; --gray:#8a8a8a; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; height:100%; background:#fff; color:var(--ink); overflow:hidden;
+    font-family:-apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; -webkit-text-size-adjust:100%; }
+  #root { position:fixed; inset:0; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+  #go { position:absolute; left:50%; top:50%; margin:0; padding:0; border:0; background:none; cursor:pointer;
+    transition:transform .25s ease; transform:translate(-50%,-50%); touch-action:manipulation; }
+  #go canvas { display:block; width:100%; height:100%; }
+  #go.press { transition:transform .1s; }
+  #fecha { position:absolute; left:0; right:0; text-align:center; font-size:13px; color:var(--gray);
+    padding:10px 24px; transition:opacity .25s; cursor:pointer; user-select:none; }
+  #status { position:absolute; left:24px; right:24px; bottom:calc(100px + env(safe-area-inset-bottom)); text-align:center;
+    font-size:13px; color:var(--gray); min-height:16px; }
+  #panel { position:absolute; left:0; right:0; top:env(safe-area-inset-top); bottom:calc(124px + env(safe-area-inset-bottom));
+    background:#fff; display:none; flex-direction:column; }
+  #panel.on { display:flex; }
+  #head { display:flex; align-items:center; padding:6px 8px 6px 20px; border-bottom:1px solid #eee; }
+  #title { flex:1; font-size:17px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #close { width:48px; height:48px; border:0; background:none; font-size:34px; font-weight:100; color:var(--ink); cursor:pointer; }
+  #list { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 20px 24px; }
+  .bloque { font-size:13px; color:var(--gray); padding:24px 0 4px; }
+  .bloque:first-child { padding-top:8px; }
+  .nota { font-size:13px; color:var(--gray); padding-bottom:4px; }
+  .nada { font-size:15px; color:var(--gray); padding:4px 0 8px; }
+  .card { padding:20px 0; border-bottom:1px solid #f0f0f0; }
+  .name { font-size:16px; line-height:1.2; user-select:text; -webkit-user-select:text; }
+  .row { display:flex; align-items:flex-end; padding:8px 0 14px; }
+  .price { flex:1; font-size:30px; font-weight:300; }
+  .sup { font-size:14px; color:var(--gray); padding-bottom:5px; }
+  .bar { width:100%; height:92px; display:block; }
+  #texto { display:none; position:absolute; left:20px; right:20px; bottom:calc(150px + env(safe-area-inset-bottom)); }
+  #texto input { width:100%; font-size:17px; padding:12px 14px; border:1px solid #ddd; border-radius:12px; outline:none; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="panel"><div id="head"><div id="title"></div><button id="close" aria-label="Cerrar">×</button></div><div id="list"></div></div>
+  <button id="go" aria-label="Buscar por voz"><canvas></canvas></button>
+  <div id="fecha">Cargando listado…</div>
+  <div id="texto"><input id="txt" type="search" placeholder="Escribe tu búsqueda…" enterkeyhint="search"></div>
+  <div id="status"></div>
+</div>
+<script src="logica.js"></script>
+<script>
+(function () {
+  'use strict';
+  // Dirección del listado (el logo.svg se busca en la misma carpeta).
+  var URL_LISTADO = 'https://carre2024.github.io/DUELO/VERSION23/stocktotal.js';
+  var URL_LOGO = URL_LISTADO.replace(/[^\/]*$/, '') + 'logo.svg';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var root = $('root'), go = $('go'), cv = go.querySelector('canvas'), ctx = cv.getContext('2d');
+  var fecha = $('fecha'), status = $('status'), panel = $('panel'), list = $('list'), title = $('title');
+  var cat = null, actualizando = false, docked = false, recording = false, goSize = 0, logoImg = null, phase = 0;
+  var dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  // ───────── Tamaño y dibujo del botón ─────────
+  function layout() {
+    var w = root.clientWidth, h = root.clientHeight;
+    goSize = Math.floor(Math.min(w * 0.78, h * 0.45, 420));
+    go.style.width = go.style.height = goSize + 'px';
+    cv.width = cv.height = Math.round(goSize * dpr);
+    fecha.style.top = Math.round(h / 2 + goSize / 2 + 8) + 'px';
+    $('texto').style.display = (!SR && !panel.classList.contains('on')) ? 'block' : 'none';
+    applyDock();
+    draw();
+  }
+  function applyDock() {
+    if (docked) {
+      var mini = 76 / goSize, h = root.clientHeight;
+      go.style.transform = 'translate(-50%,-50%) translateY(' + (h / 2 - 54 - 0) + 'px) scale(' + mini + ')';
+      fecha.style.opacity = 0;
+    } else {
+      go.style.transform = 'translate(-50%,-50%)';
+      fecha.style.opacity = 1;
+    }
+  }
+  function draw() {
+    var s = cv.width, cx = s / 2, cy = s / 2, k = dpr;
+    var bw = 1.5 * k, r = s / 2 - bw;
+    ctx.clearRect(0, 0, s, s);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.lineWidth = bw; ctx.strokeStyle = '#dcdcdc'; ctx.stroke();
+    if (recording) {
+      var half = r * 0.62, amp = r * 0.26, steps = 80;
+      ctx.beginPath();
+      for (var i = 0; i <= steps; i++) {
+        var t = i / steps, x = cx - half + 2 * half * t, y = cy + amp * Math.sin(t * 4 * Math.PI + phase);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.lineWidth = r * 0.04; ctx.strokeStyle = '#111'; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+    } else if (logoImg) {
+      var bx = r * 1.4, sc = Math.min(bx / logoImg.naturalWidth, bx / logoImg.naturalHeight);
+      var w = logoImg.naturalWidth * sc, h = logoImg.naturalHeight * sc;
+      ctx.drawImage(logoImg, cx - w / 2, cy - h / 2, w, h);
+    } else {
+      var size = r * 0.95;
+      ctx.fillStyle = '#1a1a1a'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.font = '200 ' + size + 'px -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif';
+      var m = ctx.measureText('GO');
+      if (m.width > r * 1.4) { size *= r * 1.4 / m.width; ctx.font = '200 ' + size + 'px -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif'; m = ctx.measureText('GO'); }
+      var asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+      ctx.fillText('GO', cx, cy + (asc - desc) / 2);
+    }
+  }
+  var t0 = performance.now();
+  (function loop(now) {
+    if (recording) { phase = ((now - t0) % 1800) / 1800 * 2 * Math.PI; draw(); }
+    requestAnimationFrame(loop);
+  })(t0);
+
+  // ───────── Estado ─────────
+  var stTimer = 0;
+  function say(msg, ms) {
+    clearTimeout(stTimer); status.textContent = msg;
+    if (ms) stTimer = setTimeout(function () { status.textContent = ''; }, ms);
+  }
+  function dock(v) { docked = v; applyDock(); }
+
+  // ───────── Descarga del listado y del logo ─────────
+  function bust(u) { return u + (u.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(); }
+  function actualizar(manual) {
+    if (actualizando) return;
+    actualizando = true; fecha.textContent = 'Cargando listado…';
+    var nuevo = null;
+    fetch(bust(URL_LISTADO), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (txt) { var c = Logica.parseCatalogo(txt); if (c && c.items.length >= 20) nuevo = c; })
+      .catch(function () {})
+      .then(function () {
+        // Logo opcional
+        return fetch(bust(URL_LOGO), { cache: 'no-store' }).then(function (r) { return r.ok ? r.blob() : null; })
+          .then(function (b) {
+            if (!b || b.size > 1000000) return null;
+            return new Promise(function (ok) {
+              var img = new Image(), u = URL.createObjectURL(new Blob([b], { type: 'image/svg+xml' }));
+              img.onload = function () { ok(img.naturalWidth ? img : null); };
+              img.onerror = function () { ok(null); };
+              img.src = u;
+            });
+          }).catch(function () { return null; });
+      })
+      .then(function (img) {
+        actualizando = false; logoImg = img; cat = nuevo;
+        if (nuevo) { fecha.textContent = nuevo.fecha; if (manual) say('Listado actualizado.', 3000); }
+        else { fecha.textContent = 'Sin conexión · pulsa aquí para reintentar'; say('No se ha podido cargar el listado. Necesitas conexión a internet.', 5000); }
+        draw();
+      });
+  }
+  fecha.addEventListener('click', function () { actualizar(true); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) actualizar(false); });
+
+  // ───────── Resultados ─────────
+  function eur(v) {
+    return (v % 1 === 0) ? (v + ' €') : (v.toFixed(2).replace('.', ',') + ' €');
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  // EAN-13 en vectores (SVG)
+  var L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+  var G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+  var R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+  var P = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+  function encode(d) {
+    if (!/^\d{13}$/.test(d)) return null;
+    var par = P[+d[0]], s = '101', k;
+    for (k = 0; k < 6; k++) s += (par[k] === 'L' ? L : G)[+d[1 + k]];
+    s += '01010';
+    for (k = 0; k < 6; k++) s += R[+d[7 + k]];
+    return s + '101';
+  }
+  function barcode(code) {
+    var digits = code.length === 12 ? '0' + code : code, bits = encode(digits);
+    var NS = 'http://www.w3.org/2000/svg', quiet = 9;
+    var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'bar');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Código de barras ' + digits);
+    if (!bits) return svg;
+    var total = bits.length + 2 * quiet, H = 92, textH = H * 0.2, barH = H - textH;
+    svg.setAttribute('viewBox', '0 0 ' + total + ' ' + H); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    var path = '';
+    for (var i = 0; i < bits.length; i++) {
+      if (bits[i] !== '1') continue;
+      var guard = i < 3 || (i >= 45 && i <= 49) || i >= 92;
+      path += 'M' + (quiet + i) + ' 0h1v' + (guard ? barH + textH * 0.4 : barH) + 'h-1z';
+    }
+    var p = document.createElementNS(NS, 'path'); p.setAttribute('d', path); p.setAttribute('fill', '#000'); p.setAttribute('shape-rendering', 'crispEdges');
+    svg.appendChild(p);
+    function tx(x, ch) {
+      var t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', H - textH * 0.1);
+      t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', Math.min(textH * 0.85, 11));
+      t.setAttribute('font-family', 'ui-monospace, Menlo, monospace'); t.textContent = ch; svg.appendChild(t);
+    }
+    tx(quiet / 2, digits[0]);
+    for (var k = 0; k < 6; k++) { tx(quiet + 3 + 7 * k + 3.5, digits[1 + k]); tx(quiet + 50 + 7 * k + 3.5, digits[7 + k]); }
+    return svg;
+  }
+
+  function addCard(it) {
+    var c = el('div', 'card');
+    c.appendChild(el('div', 'name', it.name));
+    var row = el('div', 'row');
+    row.appendChild(el('div', 'price', eur(it.price)));
+    var supTxt = /%$/.test(it.supText) ? ('Sup ' + it.supText + ' ≈ ' + eur(it.supEur)) : ('Sup ' + eur(it.supEur));
+    row.appendChild(el('div', 'sup', supTxt + '  ·  ' + it.stock + ' uds'));
+    c.appendChild(row); c.appendChild(barcode(it.ean));
+    list.appendChild(c);
+  }
+  function showResults(heard, bloques) {
+    list.textContent = ''; title.textContent = '«' + heard.trim() + '»';
+    bloques.forEach(function (b) {
+      list.appendChild(el('div', 'bloque', b.titulo));
+      if (b.nota) list.appendChild(el('div', 'nota', b.nota));
+      if (!b.items.length) { list.appendChild(el('div', 'nada', b.nota ? 'No hay nada que mostrar.' : 'Ningún artículo coincide.')); return; }
+      b.items.forEach(addCard);
+    });
+    panel.classList.add('on'); list.scrollTop = 0; dock(true); layoutTexto();
+  }
+  function closeResults() { panel.classList.remove('on'); dock(false); layoutTexto(); }
+  function layoutTexto() { $('texto').style.display = (!SR && !panel.classList.contains('on')) ? 'block' : 'none'; }
+  $('close').addEventListener('click', closeResults);
+
+  function search(cands) {
+    if (!cat) { say('Sin listado. Necesitas conexión a internet.', 4000); actualizar(false); return; }
+    for (var i = 0; i < cands.length; i++) {
+      var r = Logica.buscar(cands[i], cat);
+      if (r) { say(''); showResults(cands[i], r); return; }
+    }
+    say('No te he entendido: «' + cands[0] + '»', 4000);
+  }
+
+  // ───────── Voz ─────────
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null, partial = '', finished = true;
+  function stopRec(abort) { try { if (rec) abort ? rec.abort() : rec.stop(); } catch (e) {} }
+  function endSession(cands, msg) {
+    if (finished) return; finished = true; recording = false; draw();
+    try { if (rec) rec.abort(); } catch (e) {} rec = null;
+    if (cands && cands.length) search(cands); else say(msg || 'No te he oído. Pulsa y vuelve a decirlo.', 3500);
+  }
+  function start() {
+    partial = ''; finished = false;
+    rec = new SR(); rec.lang = 'es-ES'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 5;
+    rec.onresult = function (e) {
+      var res = e.results[e.results.length - 1], list = [];
+      for (var i = 0; i < res.length; i++) if (res[i].transcript.trim()) list.push(res[i].transcript);
+      if (list.length) partial = list[0];
+      if (res.isFinal) endSession(list, null);
+    };
+    rec.onerror = function (e) {
+      if (finished) return;
+      if (partial) return endSession([partial]);
+      var m = (e.error === 'not-allowed' || e.error === 'service-not-allowed') ? 'Permite el micrófono y el dictado en Ajustes para poder buscar.'
+        : (e.error === 'network') ? 'Sin conexión con el servicio de voz.'
+        : (e.error === 'no-speech' || e.error === 'aborted') ? 'No te he oído. Pulsa y vuelve a decirlo.' : 'El reconocimiento de voz ha fallado.';
+      endSession(null, m);
+    };
+    rec.onend = function () { if (!finished) endSession(partial ? [partial] : null, null); };
+    recording = true; say('Te escucho…');
+    try { rec.start(); } catch (e) { endSession(null, 'No se pudo iniciar el micrófono.'); }
+  }
+  go.addEventListener('pointerdown', function () { go.classList.add('press'); if (!docked) go.style.transform = 'translate(-50%,-50%) scale(.97)'; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) {
+    go.addEventListener(n, function () { go.classList.remove('press'); if (!docked) go.style.transform = 'translate(-50%,-50%)'; });
+  });
+  go.addEventListener('click', function () {
+    if (!cat && !recording) { if (actualizando) say('Cargando listado…', 2500); else { say('Sin listado. Necesitas conexión a internet.', 4000); actualizar(false); } return; }
+    if (!SR) { $('txt').focus(); return; }
+    if (recording) { say('Buscando…'); stopRec(false); setTimeout(function () { if (!finished) endSession(partial ? [partial] : null, null); }, 1500); }
+    else start();
+  });
+  $('txt').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { var v = this.value.trim(); if (v) { this.blur(); search([v]); } }
+  });
+
+  window.addEventListener('resize', layout);
+  window.addEventListener('orientationchange', function () { setTimeout(layout, 200); });
+  layout(); actualizar(false);
+})();
+</script>
+</body>
+</html>
