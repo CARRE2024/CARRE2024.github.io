@@ -25,3 +25,8 @@ Para cambiar la lógica de búsqueda, se sustituye logica.js en GitHub.
 - Ajustes ▸ Safari ▸ Micrófono: permitir.
 - Si en la app de la pantalla de inicio no reconoce la voz pero en Safari sí, usa Safari con la misma dirección.
 - Si el móvil no ofrece reconocimiento de voz, aparece una caja de texto para escribir la búsqueda.
+
+## Últimos cambios de lógica (igual que la APK)
+- "acero" / "inoxidable" = inox. Los colores (inox, blanco, negro) no se relajan.
+- Altura de combis: "más de dos metros", "dos metros" (±3 cm), "185 centímetros", "menor de dos metros", "un metro ochenta y cinco", "dos metros o más".
+- Si hay artículos pero sin el stock necesario, aparece "Mostrar de todos modos".

@@ -37,6 +37,7 @@
   .bloque:first-child { padding-top:8px; }
   .nota { font-size:13px; color:var(--gray); padding-bottom:4px; }
   .nada { font-size:15px; color:var(--gray); padding:4px 0 8px; }
+  .mostrar { font-size:15px; color:var(--ink); text-decoration:underline; padding:4px 0 12px; cursor:pointer; }
   .card { padding:20px 0; border-bottom:1px solid #f0f0f0; }
   .name { font-size:16px; line-height:1.2; user-select:text; -webkit-user-select:text; }
   .row { display:flex; align-items:flex-end; padding:8px 0 14px; }
@@ -210,7 +211,7 @@
     return svg;
   }
 
-  function addCard(it) {
+  function addCard(it, parent) {
     var c = el('div', 'card');
     c.appendChild(el('div', 'name', it.name));
     var row = el('div', 'row');
@@ -218,14 +219,27 @@
     var supTxt = /%$/.test(it.supText) ? ('Sup ' + it.supText + ' ≈ ' + eur(it.supEur)) : ('Sup ' + eur(it.supEur));
     row.appendChild(el('div', 'sup', supTxt + '  ·  ' + it.stock + ' uds'));
     c.appendChild(row); c.appendChild(barcode(it.ean));
-    list.appendChild(c);
+    (parent || list).appendChild(c);
   }
   function showResults(heard, bloques) {
     list.textContent = ''; title.textContent = '«' + heard.trim() + '»';
     bloques.forEach(function (b) {
       list.appendChild(el('div', 'bloque', b.titulo));
       if (b.nota) list.appendChild(el('div', 'nota', b.nota));
-      if (!b.items.length) { list.appendChild(el('div', 'nada', b.nota ? 'No hay nada que mostrar.' : 'Ningún artículo coincide.')); return; }
+      if (!b.items.length) {
+        var nada = el('div', 'nada', b.nota ? 'No hay nada que mostrar.' : 'Ningún artículo coincide.');
+        if (!b.ocultos || !b.ocultos.length) { list.appendChild(nada); return; }
+        // "Mostrar de todos modos": enseña los artículos que no llegan al stock mínimo
+        var box = el('div', 'ocultos');
+        var mostrar = el('div', 'mostrar', 'Mostrar de todos modos');
+        mostrar.addEventListener('click', function () {
+          box.textContent = '';
+          b.ocultos.forEach(function (x) { addCard(x, box); });
+        });
+        box.appendChild(nada); box.appendChild(mostrar);
+        list.appendChild(box);
+        return;
+      }
       b.items.forEach(addCard);
     });
     panel.classList.add('on'); list.scrollTop = 0; dock(true); layoutTexto();

@@ -102,7 +102,7 @@ var Logica = (function () {
     var CANON = mapOf({
       blanca: 'blanco', blancas: 'blanco', blancos: 'blanco',
       negra: 'negro', negras: 'negro', negros: 'negro',
-      inoxidable: 'inox', chollo: 'chollos', mled: 'miniled', minled: 'miniled'
+      inoxidable: 'inox', inoxidables: 'inox', acero: 'inox', aceros: 'inox', chollo: 'chollos', mled: 'miniled', minled: 'miniled'
     });
 
     function tokens(s) {
@@ -735,6 +735,7 @@ var Logica = (function () {
       ancho: 'an', ancha: 'an', anchura: 'an',
       fondo: 'fo', profundidad: 'fo', profundo: 'fo',
       cm: 'dim', centimetros: 'dim', centimetro: 'dim',
+      metros: 'm', metro: 'm', m: 'm', mt: 'm', mts: 'm',
       pulgadas: 'in', pulgada: 'in',
       gb: 'gb', g: 'gb', giga: 'gb', gigas: 'gb', gigabyte: 'gb', gigabytes: 'gb',
       tb: 'tb', tera: 'tb', teras: 'tb',
@@ -764,10 +765,70 @@ var Logica = (function () {
     ]);
     var RAM_OK = newSet([2, 3, 4, 6, 8, 12, 16, 24, 32]);
 
+    var DIMW = new Map();
+    UNITW.forEach(function (u, w) { if (u === 'al' || u === 'an' || u === 'fo') DIMW.set(w, u); });
+    var METROS = newSet(['metros', 'metro', 'm', 'mt', 'mts']);
+    var CMW = newSet(['cm', 'centimetros', 'centimetro']);
+    var LINK = newSet(['que', 'a']);
+    // "más de / menos de" no incluyen el número; "desde / hasta / mínimo / máximo" sí
+    var ESTRICTO = newSet(['mas', 'mayor', 'superior', 'encima', 'menos', 'menor', 'inferior', 'debajo', 'bajo']);
+    // "dos metros o más", "185 o menos": -1 = de ahí hacia arriba, 1 = hacia abajo
+    var DESPUES = mapOf({ mas: -1, mayor: -1, superior: -1, menos: 1, menor: 1, inferior: 1 });
+    var FRIDGE = ['combi', 'frigo', 'americano', 'congelador'];
+    var HOB = ['placa', 'horno', 'campana'];
+    // Colores: si se piden, no se relajan (si no hay en inox, no se enseñan blancos)
+    var COLORES = newSet(['blanco', 'negro', 'inox']);
+    var TOL_METROS = 3.0; // "más o menos dos metros" = ±3 cm
+
+    function Rango(min, minEx, max, maxEx) { this.min = min; this.minEx = minEx; this.max = max; this.maxEx = maxEx; }
+    Rango.prototype.ok = function (x) {
+      return (this.min === null || (this.minEx ? x > this.min : x >= this.min)) &&
+        (this.max === null || (this.maxEx ? x < this.max : x <= this.max));
+    };
+
+    // "un metro ..." -> "1 metro ..."
+    function unMetro(tk) {
+      return tk.map(function (t, i) {
+        return ((t === 'un' || t === 'uno' || t === 'una') && i + 1 < tk.length && METROS.has(tk[i + 1])) ? '1' : t;
+      });
+    }
+
+    // Longitud en cm: {cm, end, fuzzy, metros} o null. fuzzy = metros redondos ("dos metros"): ±3 cm
+    function length(tk, j) {
+      var n = tk.length;
+      if (j >= n || !isNum(tk[j])) return null;
+      if (j + 1 >= n) return null;
+      var v = Number(tk[j]);
+      var u = tk[j + 1];
+      if (METROS.has(u) && v < 10) {
+        var cm = Math.round(v * 100.0);
+        var end = j + 2;
+        var fuzzy = v === Math.floor(v); // "dos metros" aproximado; "1,85 metros" exacto
+        // "un metro ochenta y cinco" -> 185
+        if (v === Math.floor(v) && v <= 2.0 && end < n && isNum(tk[end]) && tk[end].indexOf('.') < 0) {
+          var x = Number(tk[end]);
+          if (x >= 1.0 && x <= 99.0) {
+            var k = end + 1;
+            while (k < n && FILL.has(tk[k])) k += 1;
+            var otraMedida = k < n && (DIMW.has(tk[k]) || tk[k] === 'x' || tk[k] === 'por');
+            if (!otraMedida) {
+              cm += x;
+              end += 1;
+              fuzzy = false;
+              if (end < n && CMW.has(tk[end])) end += 1;
+            }
+          }
+        }
+        return { cm: cm, end: end, fuzzy: fuzzy, metros: true };
+      }
+      if (CMW.has(u)) return { cm: v, end: j + 2, fuzzy: false, metros: false };
+      return null;
+    }
+
     function cmpWord(t) { return MAX_WORDS.has(t) ? 1 : (MIN_WORDS.has(t) ? -1 : 0); }
 
     function parse(text, cat) {
-      var tk = numbers(merge(Texto.tokens(text)));
+      var tk = numbers(unMetro(merge(Texto.tokens(text))));
       var n = tk.length;
       var used = [];
       for (var z = 0; z < n; z++) used.push(false);
@@ -775,12 +836,49 @@ var Logica = (function () {
       var energy = [];
       var pMin = null;
       var pMax = null;
+      var rangos = new Map();
+      var fridgeQ = tk.some(function (w) { var c0 = CATS.get(w); return c0 !== undefined && c0.tags.some(function (x) { return FRIDGE.indexOf(x) >= 0; }); });
+      var hobQ = tk.some(function (w) { var c0 = CATS.get(w); return c0 !== undefined && c0.tags.some(function (x) { return HOB.indexOf(x) >= 0; }); });
+      var defDim = (hobQ && !fridgeQ) ? 'an' : 'al';
 
       function add(u, vs) {
         var l = specs.get(u);
         if (l === undefined) { l = []; specs.set(u, l); }
         for (var a = 0; a < vs.length; a++) if (l.indexOf(vs[a]) < 0) l.push(vs[a]);
       }
+      function addRango(dim, cmp, v, ex) {
+        var r = rangos.get(dim);
+        rangos.set(dim, cmp === -1
+          ? new Rango(v, ex, r ? r.max : null, r ? r.maxEx : false)
+          : new Rango(r ? r.min : null, r ? r.minEx : false, v, ex));
+      }
+
+      // Coloca una longitud suelta: exacta, aproximada (metros redondos) o con "o más / o menos". Devuelve el final.
+      function placeLen(len, dimDada) {
+        var end = len.end;
+        var dim = dimDada;
+        var k = end;
+        while (k < n && FILL.has(tk[k])) k += 1;
+        if (dim === null && k < n && DIMW.has(tk[k])) { dim = DIMW.get(tk[k]); end = k + 1; }
+        var cmp = 0;
+        if (end + 1 < n && SEP.has(tk[end]) && DESPUES.has(tk[end + 1])) {
+          cmp = DESPUES.get(tk[end + 1]);
+          end += 2;
+        } else if (end + 1 < n && tk[end] === 'en' && tk[end + 1] === 'adelante') {
+          cmp = -1;
+          end += 2;
+        } else if (end + 1 < n && tk[end] === 'para' && (tk[end + 1] === 'arriba' || tk[end + 1] === 'abajo')) {
+          cmp = tk[end + 1] === 'arriba' ? -1 : 1;
+          end += 2;
+        }
+        var d = dim !== null ? dim : ((len.metros || (fridgeQ && len.cm >= 100.0)) ? defDim : 'dim');
+        var dr = d === 'dim' ? defDim : d;
+        if (cmp !== 0) addRango(dr, cmp, len.cm, false);
+        else if (len.fuzzy) rangos.set(dr, new Rango(len.cm - TOL_METROS, false, len.cm + TOL_METROS, false));
+        else add(d, [len.cm]);
+        return end;
+      }
+
       function addUnit(u, vs) {
         if (u === 'gb') {
           for (var a = 0; a < vs.length; a++) add(RAM_OK.has(kInt(vs[a])) ? 'ram' : 'rom', [vs[a]]);
@@ -804,18 +902,49 @@ var Logica = (function () {
 
         var cmp = cmpWord(t);
         if (cmp !== 0) {
+          // "más de dos metros", "menor de 185 cm", o precio: "menos de 400 euros", "desde 300", "hasta 500"
           var j = i + 1;
-          while (j < n && FILL.has(tk[j])) j += 1;
+          var dimExp = null;
+          while (j < n && (FILL.has(tk[j]) || LINK.has(tk[j]) || DIMW.has(tk[j]))) {
+            if (DIMW.has(tk[j])) dimExp = DIMW.get(tk[j]);
+            j += 1;
+          }
           if (j < n && isNum(tk[j])) {
             var v = Number(tk[j]);
             var end = j + 1;
             var conEuro = end < n && EURO.has(tk[end]);
-            if (conEuro) end += 1;
-            var otraUnidad = !conEuro && end < n && UNITW.has(tk[end]);
+
+            var len = length(tk, j);
+            var cm = v;
+            var esMedida = false;
+            if (len !== null) {
+              cm = len.cm;
+              end = len.end;
+              esMedida = true;
+            } else if (!conEuro) {
+              var kk = end;
+              while (kk < n && FILL.has(tk[kk])) kk += 1;
+              if (kk < n && DIMW.has(tk[kk])) esMedida = true;
+              else if (dimExp !== null) esMedida = true;
+              else if (fridgeQ && v >= 100.0 && v <= 230.0) esMedida = true; // "combi mayor de 185"
+            }
+            if (esMedida) {
+              var k3 = end;
+              while (k3 < n && FILL.has(tk[k3])) k3 += 1;
+              if (k3 < n && DIMW.has(tk[k3])) { if (dimExp === null) dimExp = DIMW.get(tk[k3]); end = k3 + 1; }
+              addRango(dimExp !== null ? dimExp : defDim, cmp, cm, ESTRICTO.has(t));
+              for (var qm = i; qm < end; qm++) used[qm] = true;
+              i = end;
+              continue;
+            }
+
+            var end2p = j + 1;
+            var otraUnidad = !conEuro && end2p < n && UNITW.has(tk[end2p]);
+            var fin = conEuro ? end2p + 1 : end2p;
             if (conEuro || (v >= 50 && !otraUnidad)) {
               if (cmp === 1) pMax = v; else pMin = v;
-              for (var q = i; q < end; q++) used[q] = true;
-              i = end;
+              for (var q = i; q < fin; q++) used[q] = true;
+              i = fin;
               continue;
             }
           }
@@ -826,6 +955,13 @@ var Logica = (function () {
         if (UNITW.has(t)) {
           var j2 = i + 1;
           while (j2 < n && FILL.has(tk[j2])) j2 += 1;
+          if (j2 < n && DIMW.has(t) && length(tk, j2) !== null) {
+            // "alto 2 metros", "altura 185 cm"
+            var endL = placeLen(length(tk, j2), DIMW.get(t));
+            for (var ql = i; ql < endL; ql++) used[ql] = true;
+            i = endL;
+            continue;
+          }
           if (j2 < n && isNum(tk[j2]) && UNITW.get(t) !== 'eur') {
             var vals = [];
             vals.push(Number(tk[j2]));
@@ -842,6 +978,16 @@ var Logica = (function () {
           used[i] = true;
           i += 1;
           continue;
+        }
+
+        if (isNum(t)) {
+          var len0 = length(tk, i);
+          if (len0 !== null) {
+            var endLen = placeLen(len0, null);
+            for (var qn = i; qn < endLen; qn++) used[qn] = true;
+            i = endLen;
+            continue;
+          }
         }
 
         if (isNum(t)) {
@@ -928,14 +1074,14 @@ var Logica = (function () {
         if (cats.length === 0 && specs.has('in')) cats.push(CATS.get('tv'));
       }
 
-      var vacio = cats.length === 0 && brands.length === 0 && specs.size === 0 && kws.length === 0 &&
+      var vacio = cats.length === 0 && brands.length === 0 && specs.size === 0 && rangos.size === 0 && kws.length === 0 &&
         energy.length === 0 && pMin === null && pMax === null && offers.length === 0 && !needStock && sort === 0;
       if (vacio) return null;
 
       var lista = cats.length === 0 ? [null] : cats;
       return lista.map(function (c) {
         return {
-          cat: c, brands: brands.slice(), nums: specs, energy: energy.slice(), kws: kws.slice(),
+          cat: c, brands: brands.slice(), nums: specs, rangos: rangos, energy: energy.slice(), kws: kws.slice(),
           priceMin: pMin, priceMax: pMax, offers: offers.slice(), needStock: needStock, sort: sort
         };
       });
@@ -967,6 +1113,13 @@ var Logica = (function () {
         if (!vs.some(function (x) { return numOk(i, u, x); })) ok = false;
       });
       if (!ok) return false;
+      var okR = true;
+      f.rangos.forEach(function (r, u) {
+        if (!okR) return;
+        var x = i.nums.get(u);
+        if (x === undefined || !r.ok(x)) okR = false;
+      });
+      if (!okR) return false;
       if (f.priceMin !== null && i.price < f.priceMin) return false;
       if (f.priceMax !== null && i.price > f.priceMax) return false;
       for (var k = 0; k < f.offers.length; k++) if (!i.offerKeys.has(f.offers[k])) return false;
@@ -1024,6 +1177,15 @@ var Logica = (function () {
         }
         p.push(r);
       });
+      f.rangos.forEach(function (r, u) {
+        var nom = u === 'an' ? 'ancho' : (u === 'fo' ? 'fondo' : 'alto');
+        var lo = r.min;
+        var hi = r.max;
+        if (lo !== null && hi !== null) p.push(nom + ' ' + fmt(lo) + '–' + fmt(hi) + ' cm');
+        else if (lo !== null) p.push(nom + (r.minEx ? ' más de ' : ' desde ') + fmt(lo) + ' cm');
+        else if (hi !== null) p.push(nom + (r.maxEx ? ' menos de ' : ' hasta ') + fmt(hi) + ' cm');
+        else p.push(nom);
+      });
       if (f.energy.length > 0) p.push('clase ' + f.energy.map(function (x) { return x.toUpperCase(); }).join(' / '));
       if (f.priceMin !== null && f.priceMax !== null) p.push(fmt(f.priceMin) + '–' + fmt(f.priceMax) + ' €');
       else if (f.priceMax !== null) p.push('hasta ' + fmt(f.priceMax) + ' €');
@@ -1036,36 +1198,43 @@ var Logica = (function () {
       return p.join(' · ');
     }
 
-    function copyFil(f, nums, energy) {
-      return {
-        cat: f.cat, brands: f.brands, nums: nums, energy: energy, kws: f.kws,
-        priceMin: f.priceMin, priceMax: f.priceMax, offers: f.offers, needStock: f.needStock, sort: f.sort
-      };
+    function copyFil(f, cambios) {
+      var g = {};
+      for (var k in f) g[k] = f[k];
+      for (var k2 in cambios) g[k2] = cambios[k2];
+      return g;
     }
 
     function ejecutar(q, cat) {
       var out = [];
       q.forEach(function (f) {
-        function buscarCon(ff, conPal) {
-          return ordenar(cat.items.filter(function (it) { return coincide(it, ff, conPal, true); }), f.sort).slice(0, MAX_RESULTS);
+        function buscarCon(ff, conStock) {
+          return ordenar(cat.items.filter(function (it) { return coincide(it, ff, true, conStock); }), f.sort).slice(0, MAX_RESULTS);
         }
         var found = buscarCon(f, true);
         var nota = '';
-        if (found.length === 0 && f.kws.length > 0) {
-          var alt = buscarCon(f, false);
+        var ocultos = [];
+        // Los colores (inox, blanco, negro) nunca se relajan: si no hay en inox, no se enseñan blancos
+        var colores = f.kws.filter(function (w) { return COLORES.has(w); });
+        var otras = f.kws.filter(function (w) { return !COLORES.has(w); });
+        var suave = copyFil(f, { kws: colores });
+        if (found.length === 0 && otras.length > 0) {
+          var alt = buscarCon(suave, true);
           if (alt.length > 0) {
             found = alt;
-            nota = 'Sin filtrar por: ' + f.kws.join(', ');
+            nota = 'Sin filtrar por: ' + otras.join(', ');
           }
         }
         if (found.length === 0) {
           var sinStock = cat.items.filter(function (it) { return coincide(it, f, true, false); }).length;
           if (sinStock > 0) {
+            ocultos = buscarCon(f, false);
             nota = sinStock === 1 ? 'Hay 1 artículo, pero sin el stock necesario.'
               : 'Hay ' + sinStock + ' artículos, pero sin el stock necesario.';
           }
         }
         if (found.length === 0 && nota.length === 0) {
+          // Relajación: medidas poco fiables, altura exacta y clase energética
           var flojas = new Map();
           f.nums.forEach(function (vs, u) { if (u === 'dim' || u === 'any') flojas.set(u, vs); });
           var resto = new Map();
@@ -1074,19 +1243,31 @@ var Logica = (function () {
           var flojasTxt = [];
           flojas.forEach(function (vs) { flojasTxt.push(vs.map(fmt).join('/')); });
           if (flojas.size > 0) {
-            pasos.push([copyFil(f, resto, f.energy), flojasTxt.join(', ')]);
+            pasos.push([copyFil(suave, { nums: resto }), 'Sin filtrar por: ' + flojasTxt.join(', ')]);
+          }
+          var alto = f.nums.get('al');
+          if (alto !== undefined && alto.length === 1 && !f.rangos.has('al')) {
+            var sinAl = new Map(f.nums);
+            sinAl.delete('al');
+            var rg = new Map(f.rangos);
+            rg.set('al', new Rango(alto[0] - 5.0, false, alto[0] + 5.0, false));
+            pasos.push([copyFil(suave, { nums: sinAl, rangos: rg }),
+              'No hay de ' + fmt(alto[0]) + ' cm de alto exactos; se muestran los de ±5 cm.']);
           }
           if (f.energy.length > 0) {
-            pasos.push([copyFil(f, resto, []),
-              'clase ' + f.energy.map(function (x) { return x.toUpperCase(); }).join('/') +
+            pasos.push([copyFil(suave, { nums: resto, energy: [] }),
+              'Sin filtrar por: clase ' + f.energy.map(function (x) { return x.toUpperCase(); }).join('/') +
               (flojas.size > 0 ? ' y medida' : '')]);
           }
           for (var p = 0; p < pasos.length; p++) {
-            var alt2 = buscarCon(pasos[p][0], false);
-            if (alt2.length > 0) { found = alt2; nota = 'Sin filtrar por: ' + pasos[p][1]; break; }
+            var alt2 = buscarCon(pasos[p][0], true);
+            if (alt2.length > 0) { found = alt2; nota = pasos[p][1]; break; }
           }
         }
-        out.push({ titulo: titulo(f), items: found, nota: nota });
+        if (found.length === 0 && nota.length === 0 && colores.length > 0) {
+          nota = 'No hay en ' + colores.join(' / ') + ' con lo que has pedido.';
+        }
+        out.push({ titulo: titulo(f), items: found, nota: nota, ocultos: ocultos });
       });
       return out;
     }
